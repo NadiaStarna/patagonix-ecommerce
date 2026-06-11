@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
 import { MainLayout } from '../layouts/MainLayout'
+import { LoginPage } from '../pages/auth/LoginPage'
+import { RegisterPage } from '../pages/auth/RegisterPage'
 import { ROUTES } from './routes'
 
 // Páginas temporales mientras construimos la app
-const Login = () => <div className="p-8 text-2xl">🔐 Login</div>
-const Register = () => <div className="p-8 text-2xl">📝 Register</div>
 const Products = () => <div className="p-8 text-2xl">🛍️ Products</div>
 const Cart = () => <div className="p-8 text-2xl">🛒 Cart</div>
 const Checkout = () => <div className="p-8 text-2xl">💳 Checkout</div>
@@ -21,8 +21,8 @@ export const AppRouter = () => {
         <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.PRODUCTS} replace />} />
 
         {/* Rutas públicas sin layout */}
-        <Route path={ROUTES.LOGIN} element={<Login />} />
-        <Route path={ROUTES.REGISTER} element={<Register />} />
+        <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+        <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
 
         {/* Rutas con MainLayout */}
         <Route path={ROUTES.PRODUCTS} element={
