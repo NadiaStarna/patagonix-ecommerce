@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
+import { MainLayout } from '../layouts/MainLayout'
 import { ROUTES } from './routes'
 
 // Páginas temporales mientras construimos la app
@@ -19,32 +20,34 @@ export const AppRouter = () => {
         {/* Ruta raíz redirige a productos */}
         <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.PRODUCTS} replace />} />
 
-        {/* Rutas públicas */}
+        {/* Rutas públicas sin layout */}
         <Route path={ROUTES.LOGIN} element={<Login />} />
         <Route path={ROUTES.REGISTER} element={<Register />} />
 
-        {/* Rutas de cliente - requieren sesión activa */}
-        <Route path={ROUTES.PRODUCTS} element={<Products />} />
+        {/* Rutas con MainLayout */}
+        <Route path={ROUTES.PRODUCTS} element={
+          <MainLayout><Products /></MainLayout>
+        } />
         <Route path={ROUTES.CART} element={
           <ProtectedRoute>
-            <Cart />
+            <MainLayout><Cart /></MainLayout>
           </ProtectedRoute>
         } />
         <Route path={ROUTES.CHECKOUT} element={
           <ProtectedRoute>
-            <Checkout />
+            <MainLayout><Checkout /></MainLayout>
           </ProtectedRoute>
         } />
         <Route path={ROUTES.ORDERS} element={
           <ProtectedRoute>
-            <Orders />
+            <MainLayout><Orders /></MainLayout>
           </ProtectedRoute>
         } />
 
-        {/* Rutas de administrador - requieren rol admin */}
+        {/* Rutas de administrador */}
         <Route path={ROUTES.ADMIN} element={
           <ProtectedRoute requiredRole="admin">
-            <Admin />
+            <MainLayout><Admin /></MainLayout>
           </ProtectedRoute>
         } />
 
