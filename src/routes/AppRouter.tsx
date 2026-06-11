@@ -4,9 +4,9 @@ import { MainLayout } from '../layouts/MainLayout'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { RegisterPage } from '../pages/auth/RegisterPage'
 import { ROUTES } from './routes'
+import { ProductsPage } from '../pages/products/ProductsPage'
 
 // Páginas temporales mientras construimos la app
-const Products = () => <div className="p-8 text-2xl">🛍️ Products</div>
 const Cart = () => <div className="p-8 text-2xl">🛒 Cart</div>
 const Checkout = () => <div className="p-8 text-2xl">💳 Checkout</div>
 const Orders = () => <div className="p-8 text-2xl">📦 Orders</div>
@@ -24,9 +24,8 @@ export const AppRouter = () => {
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
 
-        {/* Rutas con MainLayout */}
         <Route path={ROUTES.PRODUCTS} element={
-          <MainLayout><Products /></MainLayout>
+          <MainLayout><ProductsPage /></MainLayout>
         } />
         <Route path={ROUTES.CART} element={
           <ProtectedRoute>
