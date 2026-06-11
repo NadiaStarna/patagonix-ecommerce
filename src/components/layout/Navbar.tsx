@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/auth'
+import { useCart } from '../../contexts/cart'
 import { ROUTES } from '../../routes/routes'
 
 export const Navbar = () => {
   const { user, logout } = useAuth()
+  const { itemCount } = useCart()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -36,9 +38,14 @@ export const Navbar = () => {
         <div className="flex items-center gap-4">
           {user ? (
             <>
-              {/* Carrito */}
-              <Link to={ROUTES.CART} className="hover:text-aqua transition-colors">
+              {/* Carrito con contador */}
+              <Link to={ROUTES.CART} className="hover:text-aqua transition-colors relative">
                 🛒
+                {itemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-gold text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                    {itemCount}
+                  </span>
+                )}
               </Link>
 
               {/* Mis órdenes */}
@@ -46,10 +53,12 @@ export const Navbar = () => {
                 Mis órdenes
               </Link>
 
-              {/* Usuario y logout */}
+              {/* Usuario */}
               <span className="text-sm text-aqua hidden md:block">
                 {user.displayName}
               </span>
+
+              {/* Logout */}
               <button
                 onClick={handleLogout}
                 className="text-sm bg-gold hover:bg-opacity-80 text-white px-3 py-1 rounded transition-colors"

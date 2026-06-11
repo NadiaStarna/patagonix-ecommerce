@@ -3,12 +3,12 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { MainLayout } from '../layouts/MainLayout'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { RegisterPage } from '../pages/auth/RegisterPage'
-import { ROUTES } from './routes'
 import { ProductsPage } from '../pages/products/ProductsPage'
 import { ProductDetailPage } from '../pages/products/ProductDetailPage'
+import { CartPage } from '../pages/cart/CartPage'
+import { ROUTES } from './routes'
 
 // Páginas temporales mientras construimos la app
-const Cart = () => <div className="p-8 text-2xl">🛒 Cart</div>
 const Checkout = () => <div className="p-8 text-2xl">💳 Checkout</div>
 const Orders = () => <div className="p-8 text-2xl">📦 Orders</div>
 const Admin = () => <div className="p-8 text-2xl">👨‍💼 Admin</div>
@@ -20,18 +20,21 @@ export const AppRouter = () => {
       <Routes>
         {/* Ruta raíz redirige a productos */}
         <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.PRODUCTS} replace />} />
-        <Route path={ROUTES.PRODUCT_DETAIL} element={<MainLayout><ProductDetailPage /></MainLayout>} />
 
         {/* Rutas públicas sin layout */}
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
 
+        {/* Rutas con MainLayout */}
         <Route path={ROUTES.PRODUCTS} element={
           <MainLayout><ProductsPage /></MainLayout>
         } />
+        <Route path={ROUTES.PRODUCT_DETAIL} element={
+          <MainLayout><ProductDetailPage /></MainLayout>
+        } />
         <Route path={ROUTES.CART} element={
           <ProtectedRoute>
-            <MainLayout><Cart /></MainLayout>
+            <MainLayout><CartPage /></MainLayout>
           </ProtectedRoute>
         } />
         <Route path={ROUTES.CHECKOUT} element={

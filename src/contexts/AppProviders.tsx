@@ -1,4 +1,5 @@
 import { AuthProvider } from './auth'
+import { CartProvider } from './cart'
 
 interface AppProvidersProps {
   children: React.ReactNode
@@ -7,7 +8,9 @@ interface AppProvidersProps {
 export const AppProviders = ({ children }: AppProvidersProps) => {
   return (
     <AuthProvider>
-      {children}
+      <CartProvider>
+        {children}
+      </CartProvider>
     </AuthProvider>
   )
 }

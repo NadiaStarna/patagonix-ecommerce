@@ -3,10 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getProductById } from '../../services/products.service'
 import type { Product } from '../../types'
 import { ROUTES } from '../../routes/routes'
+import { useCart } from '../../contexts/cart'
+import { useAuth } from '../../contexts/auth'
 
 export const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { addItem } = useCart()
+  const { user } = useAuth()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -33,6 +37,17 @@ export const ProductDetailPage = () => {
 
     fetchProduct()
   }, [id])
+
+  const handleAddToCart = () => {
+    if (!user) {
+      navigate(ROUTES.LOGIN)
+      return
+    }
+    if (!product) return
+    for (let i = 0; i < quantity; i++) {
+      addItem(product)
+    }
+  }
 
   if (loading) {
     return (
@@ -128,6 +143,7 @@ export const ProductDetailPage = () => {
 
             {/* Botón agregar al carrito */}
             <button
+              onClick={handleAddToCart}
               disabled={product.stock === 0}
               className="bg-navy text-white py-3 rounded-lg font-semibold hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
