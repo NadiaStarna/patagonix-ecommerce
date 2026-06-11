@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
 import { MainLayout } from '../layouts/MainLayout'
+import { AdminLayout } from '../layouts/AdminLayout'
 import { LoginPage } from '../pages/auth/LoginPage'
 import { RegisterPage } from '../pages/auth/RegisterPage'
 import { ProductsPage } from '../pages/products/ProductsPage'
@@ -9,10 +10,11 @@ import { CartPage } from '../pages/cart/CartPage'
 import { CheckoutPage } from '../pages/checkout/CheckoutPage'
 import { OrdersPage } from '../pages/orders/OrdersPage'
 import { OrderDetailPage } from '../pages/orders/OrderDetailPage'
+import { AdminProductsPage } from '../pages/admin/AdminProductsPage'
+import { AdminOrdersPage } from '../pages/admin/AdminOrdersPage'
+import { ProductFormPage } from '../pages/admin/ProductFormPage'
 import { ROUTES } from './routes'
 
-// Páginas temporales
-const Admin = () => <div className="p-8 text-2xl">👨‍💼 Admin</div>
 const NotFound = () => <div className="p-8 text-2xl">❌ 404 - Página no encontrada</div>
 
 export const AppRouter = () => {
@@ -54,10 +56,30 @@ export const AppRouter = () => {
           </ProtectedRoute>
         } />
 
-        {/* Rutas de administrador */}
+        {/* Rutas de administrador con AdminLayout */}
         <Route path={ROUTES.ADMIN} element={
           <ProtectedRoute requiredRole="admin">
-            <MainLayout><Admin /></MainLayout>
+            <AdminLayout><AdminProductsPage /></AdminLayout>
+          </ProtectedRoute>
+        } />
+        <Route path={ROUTES.ADMIN_PRODUCTS} element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout><AdminProductsPage /></AdminLayout>
+          </ProtectedRoute>
+        } />
+        <Route path={ROUTES.ADMIN_PRODUCT_NEW} element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout><ProductFormPage /></AdminLayout>
+          </ProtectedRoute>
+        } />
+        <Route path={ROUTES.ADMIN_PRODUCT_EDIT} element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout><ProductFormPage /></AdminLayout>
+          </ProtectedRoute>
+        } />
+        <Route path={ROUTES.ADMIN_ORDERS} element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout><AdminOrdersPage /></AdminLayout>
           </ProtectedRoute>
         } />
 

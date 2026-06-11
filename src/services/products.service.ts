@@ -1,6 +1,17 @@
-import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore'
+import { 
+  collection, 
+  getDocs, 
+  getDoc, 
+  doc, 
+  query, 
+  where, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  Timestamp 
+} from 'firebase/firestore'
 import { db } from './firebase'
-import type { Product, ProductCategory } from '../types'
+import type { Product, ProductCategory, CreateProductDTO, UpdateProductDTO } from '../types'
 
 // Obtener todos los productos
 export const getProducts = async (): Promise<Product[]> => {
@@ -36,4 +47,28 @@ export const getProductById = async (id: string): Promise<Product | null> => {
     createdAt: snapshot.data().createdAt?.toDate(),
     updatedAt: snapshot.data().updatedAt?.toDate(),
   } as Product
+}
+
+// Crear un producto nuevo
+export const createProduct = async (productData: CreateProductDTO): Promise<string> => {
+  const docRef = await addDoc(collection(db, 'products'), {
+    ...productData,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  })
+  return docRef.id
+}
+
+// Actualizar un producto
+export const updateProduct = async (id: string, productData: UpdateProductDTO): Promise<void> => {
+  const docRef = doc(db, 'products', id)
+  await updateDoc(docRef, {
+    ...productData,
+    updatedAt: Timestamp.now(),
+  })
+}
+
+// Eliminar un producto
+export const deleteProduct = async (id: string): Promise<void> => {
+  await deleteDoc(doc(db, 'products', id))
 }
