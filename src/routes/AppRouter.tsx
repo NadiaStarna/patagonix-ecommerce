@@ -5,6 +5,7 @@ import { LoginPage } from '../pages/auth/LoginPage'
 import { RegisterPage } from '../pages/auth/RegisterPage'
 import { ROUTES } from './routes'
 import { ProductsPage } from '../pages/products/ProductsPage'
+import { ProductDetailPage } from '../pages/products/ProductDetailPage'
 
 // Páginas temporales mientras construimos la app
 const Cart = () => <div className="p-8 text-2xl">🛒 Cart</div>
@@ -19,6 +20,7 @@ export const AppRouter = () => {
       <Routes>
         {/* Ruta raíz redirige a productos */}
         <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.PRODUCTS} replace />} />
+        <Route path={ROUTES.PRODUCT_DETAIL} element={<MainLayout><ProductDetailPage /></MainLayout>} />
 
         {/* Rutas públicas sin layout */}
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
