@@ -6,11 +6,12 @@ import { RegisterPage } from '../pages/auth/RegisterPage'
 import { ProductsPage } from '../pages/products/ProductsPage'
 import { ProductDetailPage } from '../pages/products/ProductDetailPage'
 import { CartPage } from '../pages/cart/CartPage'
+import { CheckoutPage } from '../pages/checkout/CheckoutPage'
+import { OrdersPage } from '../pages/orders/OrdersPage'
+import { OrderDetailPage } from '../pages/orders/OrderDetailPage'
 import { ROUTES } from './routes'
 
-// Páginas temporales mientras construimos la app
-const Checkout = () => <div className="p-8 text-2xl">💳 Checkout</div>
-const Orders = () => <div className="p-8 text-2xl">📦 Orders</div>
+// Páginas temporales
 const Admin = () => <div className="p-8 text-2xl">👨‍💼 Admin</div>
 const NotFound = () => <div className="p-8 text-2xl">❌ 404 - Página no encontrada</div>
 
@@ -39,12 +40,17 @@ export const AppRouter = () => {
         } />
         <Route path={ROUTES.CHECKOUT} element={
           <ProtectedRoute>
-            <MainLayout><Checkout /></MainLayout>
+            <MainLayout><CheckoutPage /></MainLayout>
           </ProtectedRoute>
         } />
         <Route path={ROUTES.ORDERS} element={
           <ProtectedRoute>
-            <MainLayout><Orders /></MainLayout>
+            <MainLayout><OrdersPage /></MainLayout>
+          </ProtectedRoute>
+        } />
+        <Route path={ROUTES.ORDER_DETAIL} element={
+          <ProtectedRoute>
+            <MainLayout><OrderDetailPage /></MainLayout>
           </ProtectedRoute>
         } />
 
