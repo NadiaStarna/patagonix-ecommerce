@@ -13,17 +13,34 @@ export const RegisterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [localError, setLocalError] = useState<string | null>(null)
 
+  const validateForm = (): string | null => {
+    if (displayName.trim().length < 2) {
+      return 'El nombre debe tener al menos 2 caracteres'
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return 'Ingresá un email válido'
+    }
+
+    if (password.length < 6) {
+      return 'La contraseña debe tener al menos 6 caracteres'
+    }
+
+    if (password !== confirmPassword) {
+      return 'Las contraseñas no coinciden'
+    }
+
+    return null
+  }
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLocalError(null)
 
-    if (password !== confirmPassword) {
-      setLocalError('Las contraseñas no coinciden')
-      return
-    }
-
-    if (password.length < 6) {
-      setLocalError('La contraseña debe tener al menos 6 caracteres')
+    const validationError = validateForm()
+    if (validationError) {
+      setLocalError(validationError)
       return
     }
 

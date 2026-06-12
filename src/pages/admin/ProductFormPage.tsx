@@ -64,9 +64,40 @@ export const ProductFormPage = () => {
     setImagePreview(URL.createObjectURL(file))
   }
 
+  // Validación del formulario antes de enviar
+  const validateForm = (): string | null => {
+    if (form.name.trim().length < 3) {
+      return 'El nombre debe tener al menos 3 caracteres'
+    }
+
+    if (form.description.trim().length < 10) {
+      return 'La descripción debe tener al menos 10 caracteres'
+    }
+
+    const price = Number(form.price)
+    if (isNaN(price) || price <= 0) {
+      return 'El precio debe ser un número mayor a 0'
+    }
+
+    const stock = Number(form.stock)
+    if (isNaN(stock) || stock < 0) {
+      return 'El stock debe ser un número mayor o igual a 0'
+    }
+
+    return null
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    // Validamos antes de procesar el formulario
+    const validationError = validateForm()
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -76,19 +107,17 @@ export const ProductFormPage = () => {
         try {
           imageUrl = await uploadImageToS3(imageFile)
         } catch (err) {
-          // En desarrollo local usamos una URL placeholder
           imageUrl = `https://placehold.co/400x300?text=${encodeURIComponent(form.name)}`
         }
       }
 
-      // Si no hay imagen, usamos placeholder
       if (!imageUrl) {
         imageUrl = `https://placehold.co/400x300?text=${encodeURIComponent(form.name)}`
       }
 
       const productData = {
-        name: form.name,
-        description: form.description,
+        name: form.name.trim(),
+        description: form.description.trim(),
         price: Number(form.price),
         stock: Number(form.stock),
         category: form.category,
@@ -165,6 +194,7 @@ export const ProductFormPage = () => {
               onChange={e => setForm(prev => ({ ...prev, price: e.target.value }))}
               required
               min="0"
+              step="0.01"
               className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
             />
           </div>
