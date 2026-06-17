@@ -4,15 +4,18 @@ import type { RenderOptions } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '../contexts/auth'
 import { CartProvider } from '../contexts/cart'
+import { FavoritesProvider } from '../contexts/favorites'
 
 // Wrapper que provee todos los contextos necesarios para testear componentes
 const AllProviders = ({ children }: { children: React.ReactNode }) => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <CartProvider>
-          {children}
-        </CartProvider>
+        <FavoritesProvider>
+          <CartProvider>
+            {children}
+          </CartProvider>
+        </FavoritesProvider>
       </AuthProvider>
     </BrowserRouter>
   )

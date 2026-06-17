@@ -78,3 +78,31 @@ A continuación se documentan 5 momentos clave del desarrollo.
 **Captura**:
 
 `![Mocks de Firebase](./capturas/05-mocks-firebase.png)`
+
+---
+
+## 6. Diagnóstico de índices compuestos faltantes en Firestore
+
+**Contexto**: Al implementar paginación con cursor y búsqueda por prefijo en el catálogo, el filtro por categoría funcionaba pero la búsqueda por texto fallaba silenciosamente, mostrando "no se encontraron productos" sin ningún error visible en pantalla.
+
+**Consulta realizada**: Se describió el síntoma exacto (categoría funciona, búsqueda no) y se pidió ayuda para diagnosticar la causa, ya que la consola del navegador no mostraba ningún error evidente a primera vista.
+
+**Aprendizaje y decisión**: Se aprendió a revisar la pestaña Network y agregar un `console.error` temporal dentro del `catch` para exponer el error real de Firestore, que estaba siendo absorbido por un mensaje genérico ("Error al cargar los productos"). El error real indicaba que faltaba un índice compuesto para la combinación `category + nameLower`. Se crearon 3 índices compuestos distintos en Firebase Console y se identificó además que productos creados antes de agregar el campo `nameLower` no lo tenían persistido, por lo que hubo que editarlos manualmente para que la búsqueda los encontrara. Esto enseñó que un `catch` demasiado genérico puede ocultar información crítica para debuggear.
+
+**Captura**:
+
+`![Diagnóstico de índices Firestore](./capturas/06-indices-compuestos.png)`
+
+---
+
+## 7. Bug de closure obsoleto al revisar `error` del Context tras un `await`
+
+**Contexto**: En `LoginPage` y `RegisterPage`, el patrón `await login(...); if (!error) navigate(...)` a veces navegaba incluso cuando el login fallaba, o no navegaba cuando sí era exitoso.
+
+**Consulta realizada**: Se preguntó por qué revisar el estado `error` del Context inmediatamente después de un `await` podía dar un resultado inconsistente, si en teoría el `await` ya había terminado.
+
+**Aprendizaje y decisión**: Se entendió que `error` proveniente de `useAuth()` es una variable capturada en el closure del render anterior, y que `setState` en React no actualiza ese valor de forma sincrónica ni inmediata tras el `await` — el componente todavía no se volvió a renderizar con el valor nuevo. La solución fue cambiar el patrón: hacer que `login`/`register` relancen el error (`throw`) en lugar de solo guardarlo en el estado, y manejar la navegación con `try/catch` local en el formulario, sin depender del estado asíncrono del Context. Esto fue un aprendizaje conceptual más que un fix superficial: mostró un caso real de race condition entre estado de React y flujo async.
+
+**Captura**:
+
+`![Bug de closure obsoleto](./capturas/07-closure-bug.png)`

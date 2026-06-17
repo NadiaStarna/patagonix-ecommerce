@@ -1,11 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { ShoppingCart, Heart } from 'lucide-react'
 import { useAuth } from '../../contexts/auth'
 import { useCart } from '../../contexts/cart'
+import { useFavorites } from '../../contexts/favorites'
 import { ROUTES } from '../../routes/routes'
 
 export const Navbar = () => {
   const { user, logout } = useAuth()
   const { itemCount } = useCart()
+  const { favoriteIds } = useFavorites()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -38,9 +41,22 @@ export const Navbar = () => {
         <div className="flex items-center gap-4">
           {user ? (
             <>
+              {/* Favoritos con contador */}
+              <Link to={ROUTES.FAVORITES} className="hover:text-aqua transition-colors relative">
+                <Heart
+                  size={22}
+                  className={favoriteIds.length > 0 ? 'text-red-400 fill-red-400' : 'text-white'}
+                />
+                {favoriteIds.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-gold text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                    {favoriteIds.length}
+                  </span>
+                )}
+              </Link>
+
               {/* Carrito con contador */}
               <Link to={ROUTES.CART} className="hover:text-aqua transition-colors relative">
-                🛒
+                <ShoppingCart size={22} />
                 {itemCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-gold text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
                     {itemCount}

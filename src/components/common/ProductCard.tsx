@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom'
+import { Heart } from 'lucide-react'
 import type { Product } from '../../types'
 import { ROUTES } from '../../routes/routes'
+import { useFavorites } from '../../contexts/favorites'
+import { useAuth } from '../../contexts/auth'
 
 interface ProductCardProps {
   product: Product
@@ -8,6 +11,19 @@ interface ProductCardProps {
 
 export const ProductCard = ({ product }: ProductCardProps) => {
   const productDetailRoute = ROUTES.PRODUCT_DETAIL.replace(':id', product.id)
+  const { isFavorite, toggleFavorite } = useFavorites()
+  const { user } = useAuth()
+
+  const favorite = isFavorite(product.id)
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    // Evitamos que el click en el corazón dispare cualquier navegación
+    // si en el futuro la card entera se vuelve clickeable
+    e.preventDefault()
+    e.stopPropagation()
+    if (!user) return
+    toggleFavorite(product.id)
+  }
 
   return (
     <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
@@ -23,6 +39,20 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <span className="absolute top-2 left-2 bg-navy text-white text-xs px-2 py-1 rounded-full">
           {product.category}
         </span>
+
+        {/* Botón de favorito: solo visible/clickeable si hay sesión */}
+        {user && (
+          <button
+            onClick={handleToggleFavorite}
+            aria-label={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+            className="absolute top-2 right-2 w-8 h-8 bg-navy rounded-full shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
+          >
+            <Heart
+              size={16}
+              className={favorite ? 'text-red-400 fill-red-400' : 'text-white'}
+            />
+          </button>
+        )}
       </div>
 
       {/* Info */}

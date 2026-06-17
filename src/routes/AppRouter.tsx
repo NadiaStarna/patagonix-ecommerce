@@ -7,6 +7,7 @@ import { RegisterPage } from '../pages/auth/RegisterPage'
 import { ProductsPage } from '../pages/products/ProductsPage'
 import { ProductDetailPage } from '../pages/products/ProductDetailPage'
 import { CartPage } from '../pages/cart/CartPage'
+import { FavoritesPage } from '../pages/favorites/FavoritesPage'
 import { CheckoutPage } from '../pages/checkout/CheckoutPage'
 import { OrdersPage } from '../pages/orders/OrdersPage'
 import { OrderDetailPage } from '../pages/orders/OrderDetailPage'
@@ -38,6 +39,11 @@ export const AppRouter = () => {
         <Route path={ROUTES.CART} element={
           <ProtectedRoute>
             <MainLayout><CartPage /></MainLayout>
+          </ProtectedRoute>
+        } />
+        <Route path={ROUTES.FAVORITES} element={
+          <ProtectedRoute>
+            <MainLayout><FavoritesPage /></MainLayout>
           </ProtectedRoute>
         } />
         <Route path={ROUTES.CHECKOUT} element={
