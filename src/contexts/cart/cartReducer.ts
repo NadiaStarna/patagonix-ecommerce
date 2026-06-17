@@ -2,7 +2,10 @@ import type { CartState, CartAction } from './cart.types'
 
 // Función para calcular el total del carrito
 const calculateTotal = (items: CartState['items']): number => {
-  return items.reduce((total, item) => total + item.product.price * item.quantity, 0)
+  const sum = items.reduce((total, item) => total + item.product.price * item.quantity, 0)
+  // Redondeamos a 2 decimales para evitar resultados como 30.299999999999997
+  // que pueden aparecer por la forma en que JavaScript maneja los flotantes
+  return Math.round(sum * 100) / 100
 }
 
 // Estado inicial del carrito
