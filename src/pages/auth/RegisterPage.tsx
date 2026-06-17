@@ -4,14 +4,14 @@ import { useAuth } from '../../contexts/auth'
 import { ROUTES } from '../../routes/routes'
 
 export const RegisterPage = () => {
-  const { register, loginWithGoogle, error, loading } = useAuth()
+  const { register, loginWithGoogle, loading } = useAuth()
   const navigate = useNavigate()
 
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [localError, setLocalError] = useState<string | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
 
   const validateForm = (): string | null => {
     if (displayName.trim().length < 2) {
@@ -36,21 +36,31 @@ export const RegisterPage = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLocalError(null)
+    setFormError(null)
 
     const validationError = validateForm()
     if (validationError) {
-      setLocalError(validationError)
+      setFormError(validationError)
       return
     }
 
-    await register(email, password, displayName)
-    if (!error) navigate(ROUTES.PRODUCTS)
+    try {
+      await register(email, password, displayName)
+      navigate(ROUTES.PRODUCTS)
+    } catch (err: any) {
+      setFormError(err.message)
+    }
   }
 
   const handleGoogle = async () => {
-    await loginWithGoogle()
-    if (!error) navigate(ROUTES.PRODUCTS)
+    setFormError(null)
+
+    try {
+      await loginWithGoogle()
+      navigate(ROUTES.PRODUCTS)
+    } catch (err: any) {
+      setFormError(err.message)
+    }
   }
 
   return (
@@ -62,9 +72,9 @@ export const RegisterPage = () => {
         <p className="text-center text-gray-500 mb-6">Creá tu cuenta</p>
 
         {/* Errores */}
-        {(error || localError) && (
+        {formError && (
           <div className="bg-red-50 text-red-600 text-sm px-4 py-2 rounded mb-4">
-            {localError || error}
+            {formError}
           </div>
         )}
 
@@ -78,7 +88,8 @@ export const RegisterPage = () => {
               onChange={e => setDisplayName(e.target.value)}
               placeholder="Tu nombre"
               required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+              disabled={loading}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal disabled:bg-gray-100"
             />
           </div>
 
@@ -90,7 +101,8 @@ export const RegisterPage = () => {
               onChange={e => setEmail(e.target.value)}
               placeholder="tu@email.com"
               required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+              disabled={loading}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal disabled:bg-gray-100"
             />
           </div>
 
@@ -102,7 +114,8 @@ export const RegisterPage = () => {
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+              disabled={loading}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal disabled:bg-gray-100"
             />
           </div>
 
@@ -114,7 +127,8 @@ export const RegisterPage = () => {
               onChange={e => setConfirmPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+              disabled={loading}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal disabled:bg-gray-100"
             />
           </div>
 

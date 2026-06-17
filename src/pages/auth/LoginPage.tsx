@@ -4,21 +4,38 @@ import { useAuth } from '../../contexts/auth'
 import { ROUTES } from '../../routes/routes'
 
 export const LoginPage = () => {
-  const { login, loginWithGoogle, error, loading } = useAuth()
+  const { login, loginWithGoogle, loading } = useAuth()
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  // El error vive como estado local del formulario, no del context.
+  // Así evitamos depender de un valor que se actualiza de forma asíncrona
+  // y puede no estar disponible todavía justo después del await.
+  const [formError, setFormError] = useState<string | null>(null)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    await login(email, password)
-    if (!error) navigate(ROUTES.PRODUCTS)
+    setFormError(null)
+
+    try {
+      await login(email, password)
+      // La navegación solo ocurre si no se lanzó ningún error
+      navigate(ROUTES.PRODUCTS)
+    } catch (err: any) {
+      setFormError(err.message)
+    }
   }
 
   const handleGoogle = async () => {
-    await loginWithGoogle()
-    if (!error) navigate(ROUTES.PRODUCTS)
+    setFormError(null)
+
+    try {
+      await loginWithGoogle()
+      navigate(ROUTES.PRODUCTS)
+    } catch (err: any) {
+      setFormError(err.message)
+    }
   }
 
   return (
@@ -30,9 +47,9 @@ export const LoginPage = () => {
         <p className="text-center text-gray-500 mb-6">Ingresá a tu cuenta</p>
 
         {/* Error */}
-        {error && (
+        {formError && (
           <div className="bg-red-50 text-red-600 text-sm px-4 py-2 rounded mb-4">
-            {error}
+            {formError}
           </div>
         )}
 
@@ -46,7 +63,8 @@ export const LoginPage = () => {
               onChange={e => setEmail(e.target.value)}
               placeholder="tu@email.com"
               required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+              disabled={loading}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal disabled:bg-gray-100"
             />
           </div>
 
@@ -58,7 +76,8 @@ export const LoginPage = () => {
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+              disabled={loading}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal disabled:bg-gray-100"
             />
           </div>
 

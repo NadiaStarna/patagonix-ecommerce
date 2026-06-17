@@ -11,6 +11,7 @@ import {
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../../services/firebase'
 import { AuthContext } from './AuthContext'
+import { getAuthErrorMessage } from '../../utils/authErrors'
 import type { AuthState } from './auth.types'
 import type { AppUser } from '../../types'
 
@@ -63,8 +64,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await setDoc(doc(db, 'users', firebaseUser.uid), newUser)
 
       setState({ user: newUser, loading: false, error: null })
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false, error: 'Error al registrarse' }))
+    } catch (error: any) {
+      const message = getAuthErrorMessage(error?.code ?? '')
+      setState(prev => ({ ...prev, loading: false, error: message }))
+      // Relanzamos el error para que el formulario pueda reaccionar con
+      // su propio try/catch, en lugar de depender del estado del context
+      // (que se actualiza de forma asíncrona y puede no reflejarse a tiempo)
+      throw new Error(message)
     }
   }, [])
 
@@ -72,8 +78,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
       await signInWithEmailAndPassword(auth, email, password)
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false, error: 'Email o contraseña incorrectos' }))
+    } catch (error: any) {
+      const message = getAuthErrorMessage(error?.code ?? '')
+      setState(prev => ({ ...prev, loading: false, error: message }))
+      throw new Error(message)
     }
   }, [])
 
@@ -95,8 +103,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
         await setDoc(doc(db, 'users', firebaseUser.uid), newUser)
       }
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false, error: 'Error al iniciar sesión con Google' }))
+    } catch (error: any) {
+      const message = getAuthErrorMessage(error?.code ?? '')
+      setState(prev => ({ ...prev, loading: false, error: message }))
+      throw new Error(message)
     }
   }, [])
 
@@ -109,8 +119,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [])
 
-  // Memoizamos el value para evitar re-renders en cascada
-  // en todos los componentes que consumen useAuth (Navbar, ProtectedRoute, etc.)
   const value = useMemo(
     () => ({ ...state, register, login, loginWithGoogle, logout }),
     [state, register, login, loginWithGoogle, logout]
