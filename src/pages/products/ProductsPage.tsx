@@ -15,7 +15,19 @@ const CATEGORIES: { label: string; value: ProductCategory | 'todas' }[] = [
 ]
 
 export const ProductsPage = () => {
-  const { filteredProducts, loading, error, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery, refetchProducts } = useProducts()
+  const {
+    products,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    selectedCategory,
+    setSelectedCategory,
+    searchQuery,
+    setSearchQuery,
+    refetchProducts,
+    loadMore,
+  } = useProducts()
 
   return (
     <div>
@@ -60,12 +72,12 @@ export const ProductsPage = () => {
         ))}
       </div>
 
-      {/* Estados de UI: loading, error, empty, reutilizables en toda la app */}
+      {/* Estados de UI */}
       {loading && <LoadingState message="Cargando productos..." />}
 
       {error && <ErrorState message={error} onRetry={refetchProducts} />}
 
-      {!loading && !error && filteredProducts.length === 0 && (
+      {!loading && !error && products.length === 0 && (
         <EmptyState
           icon="🔍"
           title="No se encontraron productos"
@@ -74,12 +86,27 @@ export const ProductsPage = () => {
       )}
 
       {/* Grid de productos */}
-      {!loading && filteredProducts.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+      {!loading && products.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {products.map((product: typeof products[number]) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+
+          {/* Botón cargar más, solo si hay más páginas disponibles */}
+          {hasMore && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="bg-white border border-navy text-navy px-6 py-2 rounded-lg text-sm font-medium hover:bg-navy hover:text-white transition disabled:opacity-50"
+              >
+                {loadingMore ? 'Cargando más...' : 'Cargar más productos'}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

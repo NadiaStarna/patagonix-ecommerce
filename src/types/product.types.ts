@@ -10,6 +10,7 @@ export type ProductCategory =
 export interface Product {
   id: string                  // ID único generado por Firestore
   name: string                // Nombre del producto
+  nameLower: string            // Nombre en minúsculas, para búsqueda por prefijo en Firestore
   description: string         // Descripción detallada
   price: number               // Precio en pesos
   stock: number               // Cantidad disponible
@@ -19,8 +20,8 @@ export interface Product {
   updatedAt: Date             // Fecha de última modificación
 }
 
-// Lo que se necesita para crear un producto nuevo (sin id ni fechas, los genera el sistema)
-export type CreateProductDTO = Omit<Product, 'id' | 'createdAt' | 'updatedAt'>
+// Lo que se necesita para crear un producto nuevo (sin id, nameLower ni fechas, los genera el sistema)
+export type CreateProductDTO = Omit<Product, 'id' | 'nameLower' | 'createdAt' | 'updatedAt'>
 
 // Lo que se puede modificar de un producto (todos los campos son opcionales)
 export type UpdateProductDTO = Partial<CreateProductDTO>

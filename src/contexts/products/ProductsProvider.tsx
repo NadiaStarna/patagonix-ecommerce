@@ -1,69 +1,95 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { getProducts, getProductsByCategory } from '../../services/products.service'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { getProductsPage } from '../../services/products.service'
 import { ProductsContext } from './ProductsContext'
 import type { Product, ProductCategory } from '../../types'
+import type { QueryDocumentSnapshot } from 'firebase/firestore'
 
 export const ProductsProvider = ({ children }: { children: React.ReactNode }) => {
   const [products, setProducts] = useState<Product[]>([])
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'todas'>('todas')
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Función para recargar productos desde Firestore, memoizada con useCallback
-  const refetchProducts = useCallback(async () => {
+  const lastDocRef = useRef<QueryDocumentSnapshot<Product> | null>(null)
+
+  const loadFirstPage = useCallback(async (category: ProductCategory | 'todas', search: string) => {
     try {
       setLoading(true)
       setError(null)
-      const data = selectedCategory === 'todas'
-        ? await getProducts()
-        : await getProductsByCategory(selectedCategory)
-      setProducts(data)
-      setFilteredProducts(data)
+      lastDocRef.current = null
+
+      const result = await getProductsPage({ category, searchPrefix: search })
+
+      setProducts(result.products)
+      setHasMore(result.hasMore)
+      lastDocRef.current = result.lastDoc
     } catch (err) {
+      // TEMPORAL: logueamos el error real para diagnosticar el índice faltante
       setError('Error al cargar los productos')
     } finally {
       setLoading(false)
     }
-  }, [selectedCategory])
+  }, [])
 
-  // Cargar productos al montar y cuando cambia la categoría
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMore || !lastDocRef.current) return
+
+    try {
+      setLoadingMore(true)
+      const result = await getProductsPage({
+        category: selectedCategory,
+        searchPrefix: searchQuery,
+        cursor: lastDocRef.current,
+      })
+
+      setProducts(prev => {
+        const existingIds = new Set(prev.map(p => p.id))
+        const newOnes = result.products.filter(p => !existingIds.has(p.id))
+        return [...prev, ...newOnes]
+      })
+      setHasMore(result.hasMore)
+      lastDocRef.current = result.lastDoc
+    } catch (err) {
+      setError('Error al cargar más productos')
+    } finally {
+      setLoadingMore(false)
+    }
+  }, [hasMore, loadingMore, selectedCategory, searchQuery])
+
+  const refetchProducts = useCallback(async () => {
+    await loadFirstPage(selectedCategory, searchQuery)
+  }, [loadFirstPage, selectedCategory, searchQuery])
+
   useEffect(() => {
-    refetchProducts()
-  }, [refetchProducts])
+    loadFirstPage(selectedCategory, '')
+  }, [selectedCategory, loadFirstPage])
 
-  // Búsqueda con debounce
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchQuery.trim() === '') {
-        setFilteredProducts(products)
-      } else {
-        const filtered = products.filter(p =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        setFilteredProducts(filtered)
-      }
+      loadFirstPage(selectedCategory, searchQuery)
     }, 400)
 
     return () => clearTimeout(timer)
-  }, [searchQuery, products])
+  }, [searchQuery])
 
-  // Memoizamos el value para evitar re-renders innecesarios en cascada.
-  // Solo cambia cuando alguna de estas dependencias realmente cambia.
   const value = useMemo(
     () => ({
       products,
-      filteredProducts,
       loading,
+      loadingMore,
+      hasMore,
       error,
       selectedCategory,
       searchQuery,
       setSelectedCategory,
       setSearchQuery,
       refetchProducts,
+      loadMore,
     }),
-    [products, filteredProducts, loading, error, selectedCategory, searchQuery, refetchProducts]
+    [products, loading, loadingMore, hasMore, error, selectedCategory, searchQuery, refetchProducts, loadMore]
   )
 
   return (

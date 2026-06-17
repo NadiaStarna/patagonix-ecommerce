@@ -7,6 +7,7 @@ import type { Product } from '../../types'
 const mockProduct: Product = {
   id: '1',
   name: 'Laptop Gaming',
+  nameLower: 'laptop gaming',
   description: 'Laptop de alta performance',
   price: 150000,
   stock: 10,

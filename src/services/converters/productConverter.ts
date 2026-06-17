@@ -11,6 +11,7 @@ export const productConverter: FirestoreDataConverter<Product> = {
   toFirestore(product: WithFieldValue<Product>): DocumentData {
     return {
       name: product.name,
+      nameLower: product.nameLower,
       description: product.description,
       price: product.price,
       stock: product.stock,
@@ -35,6 +36,9 @@ export const productConverter: FirestoreDataConverter<Product> = {
     return {
       id: snapshot.id,
       name: data.name,
+      // Si un documento viejo no tiene nameLower todavía, lo calculamos al vuelo
+      // como fallback, para no romper productos creados antes de este cambio
+      nameLower: typeof data.nameLower === 'string' ? data.nameLower : data.name.toLowerCase(),
       description: data.description,
       price: data.price,
       stock: data.stock,
