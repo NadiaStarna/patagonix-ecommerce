@@ -8,7 +8,7 @@ import {
   addDoc, 
   updateDoc, 
   deleteDoc, 
-  Timestamp 
+  serverTimestamp 
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { Product, ProductCategory, CreateProductDTO, UpdateProductDTO } from '../types'
@@ -53,8 +53,10 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 export const createProduct = async (productData: CreateProductDTO): Promise<string> => {
   const docRef = await addDoc(collection(db, 'products'), {
     ...productData,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
+    // serverTimestamp() usa el reloj del servidor de Firestore, no el del
+    // cliente, evitando inconsistencias por reloj local mal configurado
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   })
   return docRef.id
 }
@@ -64,7 +66,7 @@ export const updateProduct = async (id: string, productData: UpdateProductDTO): 
   const docRef = doc(db, 'products', id)
   await updateDoc(docRef, {
     ...productData,
-    updatedAt: Timestamp.now(),
+    updatedAt: serverTimestamp(),
   })
 }
 

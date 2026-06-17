@@ -7,7 +7,7 @@ import {
   query, 
   where,
   updateDoc,
-  Timestamp,
+  serverTimestamp,
   orderBy
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -17,8 +17,10 @@ import type { Order, CreateOrderDTO, OrderStatus } from '../types'
 export const createOrder = async (orderData: CreateOrderDTO): Promise<string> => {
   const docRef = await addDoc(collection(db, 'orders'), {
     ...orderData,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
+    // serverTimestamp() usa el reloj del servidor de Firestore, no el del
+    // cliente, evitando inconsistencias por reloj local mal configurado
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   })
   return docRef.id
 }
@@ -72,6 +74,6 @@ export const updateOrderStatus = async (orderId: string, status: OrderStatus): P
   const docRef = doc(db, 'orders', orderId)
   await updateDoc(docRef, { 
     status,
-    updatedAt: Timestamp.now()
+    updatedAt: serverTimestamp()
   })
 }
