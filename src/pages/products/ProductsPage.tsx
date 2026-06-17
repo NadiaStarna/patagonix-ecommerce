@@ -1,5 +1,8 @@
 import { useProducts } from '../../contexts/products'
 import { ProductCard } from '../../components/common/ProductCard'
+import { LoadingState } from '../../components/common/LoadingState'
+import { EmptyState } from '../../components/common/EmptyState'
+import { ErrorState } from '../../components/common/ErrorState'
 import type { ProductCategory } from '../../types'
 
 const CATEGORIES: { label: string; value: ProductCategory | 'todas' }[] = [
@@ -12,7 +15,7 @@ const CATEGORIES: { label: string; value: ProductCategory | 'todas' }[] = [
 ]
 
 export const ProductsPage = () => {
-  const { filteredProducts, loading, error, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery } = useProducts()
+  const { filteredProducts, loading, error, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery, refetchProducts } = useProducts()
 
   return (
     <div>
@@ -57,27 +60,17 @@ export const ProductsPage = () => {
         ))}
       </div>
 
-      {/* Estado de carga */}
-      {loading && (
-        <div className="flex justify-center py-16">
-          <div className="w-10 h-10 border-4 border-teal border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
+      {/* Estados de UI: loading, error, empty, reutilizables en toda la app */}
+      {loading && <LoadingState message="Cargando productos..." />}
 
-      {/* Error */}
-      {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
-          {error}
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={refetchProducts} />}
 
-      {/* Sin productos */}
       {!loading && !error && filteredProducts.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-4xl mb-3">🔍</p>
-          <p className="text-lg font-medium">No se encontraron productos</p>
-          <p className="text-sm">Probá con otra categoría o término de búsqueda</p>
-        </div>
+        <EmptyState
+          icon="🔍"
+          title="No se encontraron productos"
+          description="Probá con otra categoría o término de búsqueda"
+        />
       )}
 
       {/* Grid de productos */}
