@@ -1,4 +1,5 @@
 import { AuthProvider } from './auth'
+import { ProductsProvider } from './products'
 import { CartProvider } from './cart'
 
 interface AppProvidersProps {
@@ -8,9 +9,11 @@ interface AppProvidersProps {
 export const AppProviders = ({ children }: AppProvidersProps) => {
   return (
     <AuthProvider>
-      <CartProvider>
-        {children}
-      </CartProvider>
+      <ProductsProvider>
+        <CartProvider>
+          {children}
+        </CartProvider>
+      </ProductsProvider>
     </AuthProvider>
   )
 }

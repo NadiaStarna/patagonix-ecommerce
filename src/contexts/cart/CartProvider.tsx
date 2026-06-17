@@ -1,41 +1,46 @@
-import { useReducer } from 'react'
+import { useReducer, useCallback, useMemo } from 'react'
 import { CartContext } from './CartContext'
 import { cartReducer, initialCartState } from './cartReducer'
 import type { CartContextType } from './cart.types'
 import type { Product } from '../../types'
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-  // useReducer recibe el reducer y el estado inicial
   const [state, dispatch] = useReducer(cartReducer, initialCartState)
 
-  // Funciones que despachan acciones al reducer
-  const addItem = (product: Product) => {
+  // Cada función envuelta en useCallback para mantener su referencia estable
+  // entre renders, ya que dispatch nunca cambia de identidad
+  const addItem = useCallback((product: Product) => {
     dispatch({ type: 'ADD_ITEM', payload: product })
-  }
+  }, [])
 
-  const removeItem = (productId: string) => {
+  const removeItem = useCallback((productId: string) => {
     dispatch({ type: 'REMOVE_ITEM', payload: productId })
-  }
+  }, [])
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = useCallback((productId: string, quantity: number) => {
     dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity } })
-  }
+  }, [])
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     dispatch({ type: 'CLEAR_CART' })
-  }
+  }, [])
 
-  // Total de items para mostrar en el navbar
   const itemCount = state.items.reduce((count, item) => count + item.quantity, 0)
 
-  const value: CartContextType = {
-    ...state,
-    addItem,
-    removeItem,
-    updateQuantity,
-    clearCart,
-    itemCount,
-  }
+  // Memoizamos el value para que solo cambie cuando realmente
+  // cambia el estado del carrito, evitando re-renders en cascada
+  // en componentes que consumen este contexto (ej: Navbar)
+  const value: CartContextType = useMemo(
+    () => ({
+      ...state,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      itemCount,
+    }),
+    [state, addItem, removeItem, updateQuantity, clearCart, itemCount]
+  )
 
   return (
     <CartContext.Provider value={value}>

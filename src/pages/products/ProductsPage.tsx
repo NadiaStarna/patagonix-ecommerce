@@ -1,4 +1,4 @@
-import { useProducts } from '../../hooks/useProducts'
+import { useProducts } from '../../contexts/products'
 import { ProductCard } from '../../components/common/ProductCard'
 import type { ProductCategory } from '../../types'
 
@@ -12,7 +12,7 @@ const CATEGORIES: { label: string; value: ProductCategory | 'todas' }[] = [
 ]
 
 export const ProductsPage = () => {
-  const { products, loading, error, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery } = useProducts()
+  const { filteredProducts, loading, error, selectedCategory, setSelectedCategory, searchQuery, setSearchQuery } = useProducts()
 
   return (
     <div>
@@ -72,7 +72,7 @@ export const ProductsPage = () => {
       )}
 
       {/* Sin productos */}
-      {!loading && !error && products.length === 0 && (
+      {!loading && !error && filteredProducts.length === 0 && (
         <div className="text-center py-16 text-gray-400">
           <p className="text-4xl mb-3">🔍</p>
           <p className="text-lg font-medium">No se encontraron productos</p>
@@ -81,9 +81,9 @@ export const ProductsPage = () => {
       )}
 
       {/* Grid de productos */}
-      {!loading && products.length > 0 && (
+      {!loading && filteredProducts.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.map(product => (
+          {filteredProducts.map(product => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>

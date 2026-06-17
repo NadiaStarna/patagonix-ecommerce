@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -14,21 +14,17 @@ import { AuthContext } from './AuthContext'
 import type { AuthState } from './auth.types'
 import type { AppUser } from '../../types'
 
-// Proveedor de autenticación
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const [state, setState] = useState<AuthState>({
     user: null,
-    loading: true,   // true al inicio porque verificamos si hay sesión activa
+    loading: true,
     error: null,
   })
 
-  // Se ejecuta una sola vez al montar el componente
-  // Firebase nos avisa cada vez que cambia el estado de autenticación
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Si hay usuario autenticado, leemos su rol desde Firestore
         const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
         const userData = userDoc.data()
 
@@ -42,32 +38,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         setState({ user: appUser, loading: false, error: null })
       } else {
-        // Si no hay usuario, limpiamos el estado
         setState({ user: null, loading: false, error: null })
       }
     })
 
-    // Limpiamos el listener cuando el componente se desmonta
     return () => unsubscribe()
   }, [])
 
-  // Registro con email y password
-  const register = async (email: string, password: string, displayName: string) => {
+  const register = useCallback(async (email: string, password: string, displayName: string) => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
 
-      // Creamos el usuario en Firebase Auth
       const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password)
-
-      // Actualizamos el nombre en Firebase Auth
       await updateProfile(firebaseUser, { displayName })
 
-      // Guardamos el usuario con su rol en Firestore
       const newUser: AppUser = {
         uid: firebaseUser.uid,
         email: firebaseUser.email ?? '',
         displayName,
-        role: 'customer',  // Por defecto todos son clientes
+        role: 'customer',
         createdAt: new Date(),
       }
 
@@ -77,31 +66,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       setState(prev => ({ ...prev, loading: false, error: 'Error al registrarse' }))
     }
-  }
+  }, [])
 
-  // Login con email y password
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
       await signInWithEmailAndPassword(auth, email, password)
-      // onAuthStateChanged se encarga de actualizar el estado
     } catch (error) {
       setState(prev => ({ ...prev, loading: false, error: 'Email o contraseña incorrectos' }))
     }
-  }
+  }, [])
 
-  // Login con Google
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
       const provider = new GoogleAuthProvider()
       const { user: firebaseUser } = await signInWithPopup(auth, provider)
 
-      // Verificamos si el usuario ya existe en Firestore
       const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
 
       if (!userDoc.exists()) {
-        // Si es la primera vez que entra con Google, lo guardamos en Firestore
         const newUser: AppUser = {
           uid: firebaseUser.uid,
           email: firebaseUser.email ?? '',
@@ -111,24 +95,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
         await setDoc(doc(db, 'users', firebaseUser.uid), newUser)
       }
-      // onAuthStateChanged se encarga de actualizar el estado
     } catch (error) {
       setState(prev => ({ ...prev, loading: false, error: 'Error al iniciar sesión con Google' }))
     }
-  }
+  }, [])
 
-  // Logout
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await signOut(auth)
       setState({ user: null, loading: false, error: null })
     } catch (error) {
       setState(prev => ({ ...prev, loading: false, error: 'Error al cerrar sesión' }))
     }
-  }
+  }, [])
+
+  // Memoizamos el value para evitar re-renders en cascada
+  // en todos los componentes que consumen useAuth (Navbar, ProtectedRoute, etc.)
+  const value = useMemo(
+    () => ({ ...state, register, login, loginWithGoogle, logout }),
+    [state, register, login, loginWithGoogle, logout]
+  )
 
   return (
-    <AuthContext.Provider value={{ ...state, register, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )
