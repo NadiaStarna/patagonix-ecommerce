@@ -11,59 +11,49 @@ import {
   serverTimestamp 
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { productConverter } from './converters/productConverter'
 import type { Product, ProductCategory, CreateProductDTO, UpdateProductDTO } from '../types'
+
+// La referencia a la colección lleva el converter aplicado UNA sola vez.
+// A partir de acá, cualquier operación sobre productsRef ya devuelve
+// y espera objetos Product tipados y validados, nunca datos crudos del SDK.
+const productsRef = collection(db, 'products').withConverter(productConverter)
 
 // Obtener todos los productos
 export const getProducts = async (): Promise<Product[]> => {
-  const snapshot = await getDocs(collection(db, 'products'))
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    createdAt: doc.data().createdAt?.toDate(),
-    updatedAt: doc.data().updatedAt?.toDate(),
-  })) as Product[]
+  const snapshot = await getDocs(productsRef)
+  return snapshot.docs.map(doc => doc.data())
 }
 
 // Obtener productos por categoría
 export const getProductsByCategory = async (category: ProductCategory): Promise<Product[]> => {
-  const q = query(collection(db, 'products'), where('category', '==', category))
+  const q = query(productsRef, where('category', '==', category))
   const snapshot = await getDocs(q)
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    createdAt: doc.data().createdAt?.toDate(),
-    updatedAt: doc.data().updatedAt?.toDate(),
-  })) as Product[]
+  return snapshot.docs.map(doc => doc.data())
 }
 
 // Obtener un producto por ID
 export const getProductById = async (id: string): Promise<Product | null> => {
-  const docRef = doc(db, 'products', id)
+  const docRef = doc(productsRef, id)
   const snapshot = await getDoc(docRef)
   if (!snapshot.exists()) return null
-  return {
-    id: snapshot.id,
-    ...snapshot.data(),
-    createdAt: snapshot.data().createdAt?.toDate(),
-    updatedAt: snapshot.data().updatedAt?.toDate(),
-  } as Product
+  return snapshot.data()
 }
 
 // Crear un producto nuevo
 export const createProduct = async (productData: CreateProductDTO): Promise<string> => {
-  const docRef = await addDoc(collection(db, 'products'), {
+  const docRef = await addDoc(productsRef, {
     ...productData,
-    // serverTimestamp() usa el reloj del servidor de Firestore, no el del
-    // cliente, evitando inconsistencias por reloj local mal configurado
+    id: '',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  })
+  } as any)
   return docRef.id
 }
 
 // Actualizar un producto
 export const updateProduct = async (id: string, productData: UpdateProductDTO): Promise<void> => {
-  const docRef = doc(db, 'products', id)
+  const docRef = doc(productsRef, id)
   await updateDoc(docRef, {
     ...productData,
     updatedAt: serverTimestamp(),
@@ -72,5 +62,5 @@ export const updateProduct = async (id: string, productData: UpdateProductDTO): 
 
 // Eliminar un producto
 export const deleteProduct = async (id: string): Promise<void> => {
-  await deleteDoc(doc(db, 'products', id))
+  await deleteDoc(doc(productsRef, id))
 }
