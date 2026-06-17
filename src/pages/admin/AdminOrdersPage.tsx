@@ -53,8 +53,12 @@ export const AdminOrdersPage = () => {
       setOrders(prev => prev.map(o =>
         o.id === orderId ? { ...o, status: newStatus } : o
       ))
-    } catch (err) {
-      alert('Error al actualizar el estado')
+    } catch (err: any) {
+      if (err?.code === 'permission-denied') {
+        alert('No tenés permisos para cambiar el estado de las órdenes. Reintentá loguearte o consultá al administrador.')
+      } else {
+        alert('Error al actualizar el estado. Intentá de nuevo.')
+      }
     }
   }
 
