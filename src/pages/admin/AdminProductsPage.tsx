@@ -8,6 +8,7 @@ export const AdminProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const fetchProducts = async () => {
     try {
@@ -28,10 +29,17 @@ export const AdminProductsPage = () => {
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`¿Estás segura de eliminar "${name}"?`)) return
     try {
+      setDeletingId(id)
       await deleteProduct(id)
       setProducts(prev => prev.filter(p => p.id !== id))
-    } catch (err) {
-      alert('Error al eliminar el producto')
+    } catch (err: any) {
+      if (err?.code === 'permission-denied') {
+        alert('No tenés permisos para eliminar productos. Reintentá loguearte o consultá al administrador.')
+      } else {
+        alert('Error al eliminar el producto. Intentá de nuevo.')
+      }
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -85,47 +93,51 @@ export const AdminProductsPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {products.map(product => (
-                <tr key={product.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        className="w-10 h-10 object-cover rounded-lg"
-                      />
-                      <span className="font-medium text-navy">{product.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">{product.category}</td>
-                  <td className="px-6 py-4 font-medium text-teal">
-                    ${product.price.toLocaleString('es-AR')}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      product.stock > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                    }`}>
-                      {product.stock}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        to={ROUTES.ADMIN_PRODUCT_EDIT.replace(':id', product.id)}
-                        className="text-teal hover:underline text-xs"
-                      >
-                        Editar
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(product.id, product.name)}
-                        className="text-red-400 hover:underline text-xs"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {products.map(product => {
+                const isDeleting = deletingId === product.id
+                return (
+                  <tr key={product.id} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-10 h-10 object-cover rounded-lg"
+                        />
+                        <span className="font-medium text-navy">{product.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500">{product.category}</td>
+                    <td className="px-6 py-4 font-medium text-teal">
+                      ${product.price.toLocaleString('es-AR')}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        product.stock > 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                      }`}>
+                        {product.stock}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to={ROUTES.ADMIN_PRODUCT_EDIT.replace(':id', product.id)}
+                          className={`text-teal hover:underline text-xs ${isDeleting ? 'pointer-events-none opacity-50' : ''}`}
+                        >
+                          Editar
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(product.id, product.name)}
+                          disabled={isDeleting}
+                          className="text-red-400 hover:underline text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isDeleting ? 'Eliminando…' : 'Eliminar'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

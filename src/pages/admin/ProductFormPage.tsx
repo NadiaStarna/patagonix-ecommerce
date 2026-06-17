@@ -64,7 +64,6 @@ export const ProductFormPage = () => {
     setImagePreview(URL.createObjectURL(file))
   }
 
-  // Validación del formulario antes de enviar
   const validateForm = (): string | null => {
     if (form.name.trim().length < 3) {
       return 'El nombre debe tener al menos 3 caracteres'
@@ -91,7 +90,6 @@ export const ProductFormPage = () => {
     e.preventDefault()
     setError(null)
 
-    // Validamos antes de procesar el formulario
     const validationError = validateForm()
     if (validationError) {
       setError(validationError)
@@ -131,8 +129,12 @@ export const ProductFormPage = () => {
       }
 
       navigate(ROUTES.ADMIN_PRODUCTS)
-    } catch (err) {
-      setError('Error al guardar el producto')
+    } catch (err: any) {
+      if (err?.code === 'permission-denied') {
+        setError('No tenés permisos para esta acción. Si creés que es un error, reintentá loguearte o consultá al administrador.')
+      } else {
+        setError('Ocurrió un error al guardar el producto. Intentá de nuevo.')
+      }
     } finally {
       setLoading(false)
     }
