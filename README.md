@@ -7,7 +7,7 @@ Plataforma de e-commerce desarrollada como Proyecto Integrador del Módulo 5 - E
 Patagonix Tech es una software factory especializada en aplicaciones web para retail. Este proyecto implementa una plataforma de e-commerce que permite a usuarios finales comprar productos online, con un panel de administración robusto para gestionar catálogo y órdenes.
 
 La aplicación soporta dos tipos de usuarios:
-- **Clientes**: navegan el catálogo, agregan productos al carrito y realizan compras
+- **Clientes**: navegan el catálogo, agregan productos al carrito, marcan favoritos y realizan compras
 - **Administradores**: gestionan productos y órdenes desde un panel protegido
 
 ## 🚀 Demo en producción
@@ -21,6 +21,7 @@ La aplicación soporta dos tipos de usuarios:
 - React Router (navegación)
 - TailwindCSS v4 (estilos)
 - Context API + useReducer (estado global)
+- lucide-react (iconografía)
 
 ### Backend / Servicios
 - Firebase Authentication (registro, login, roles)
@@ -47,7 +48,7 @@ src/
 
 ├── pages/          → vistas completas organizadas por dominio
 
-├── contexts/       → estado global (auth, cart, products)
+├── contexts/       → estado global (auth, cart, products, favorites)
 
 ├── hooks/          → custom hooks
 
@@ -69,7 +70,11 @@ El carrito de compras usa `useReducer` en lugar de `useState` porque maneja múl
 
 El catálogo de productos también vive en su propio Context (`ProductsContext`), siguiendo el mismo patrón que Auth y Cart, en lugar de un hook simple. Esto centraliza la lógica de fetching, filtrado por categoría y búsqueda por prefijo, evitando que distintos componentes disparen fetches duplicados. La carga de productos usa **paginación con cursor real** (`startAfter` + `limit` de Firestore) en lugar de traer todo el catálogo de una vez, y la búsqueda por nombre usa un campo derivado `nameLower` para permitir búsquedas por prefijo eficientes en Firestore.
 
-Auth, Cart y Products están en **contextos separados** para mantener responsabilidades claras: cada uno maneja su propio dominio de estado.
+### Favoritos con persistencia en Firestore
+
+A diferencia del carrito (que persiste en `localStorage` porque tiene sentido incluso sin sesión), los favoritos requieren un usuario autenticado y persisten en Firestore en un documento `favorites/{uid}` con un array de IDs de producto. Esta diferencia de almacenamiento es intencional: favoritos solo tiene sentido asociado a una identidad, y guardarlo en Firestore permite que el usuario vea los mismos favoritos desde cualquier dispositivo. Las reglas de Firestore garantizan que cada usuario solo pueda leer y escribir su propio documento de favoritos.
+
+Auth, Cart, Products y Favorites están en **contextos separados** para mantener responsabilidades claras: cada uno maneja su propio dominio de estado.
 
 ### AWS S3 con presigned URLs
 
@@ -77,7 +82,7 @@ Las imágenes de productos se almacenan en S3 en lugar de Firestore porque Fires
 
 ### Seguridad en Firestore Rules
 
-Las reglas de Firestore no solo validan el rol del usuario (`isAdmin()`), sino que además restringen qué campos específicos puede modificar un admin al actualizar una orden, usando `request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])`. Esto evita que una sesión comprometida o un error pueda alterar campos sensibles como el total o el dueño de la orden, incluso teniendo permisos de admin.
+Las reglas de Firestore no solo validan el rol del usuario (`isAdmin()`), sino que además restringen qué campos específicos puede modificar un admin al actualizar una orden, usando `request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])`. Esto evita que una sesión comprometida o un error pueda alterar campos sensibles como el total o el dueño de la orden, incluso teniendo permisos de admin. De la misma forma, cada usuario solo puede leer y escribir su propio documento de favoritos.
 
 ## 📂 Estructura de carpetas completa
 patagonix-ecommerce/
@@ -102,6 +107,8 @@ patagonix-ecommerce/
 
 │   │   ├── products/              → ProductsContext, ProductsProvider, useProducts
 
+│   │   ├── favorites/             → FavoritesContext, FavoritesProvider, useFavorites
+
 │   │   └── AppProviders.tsx
 
 │   ├── layouts/
@@ -117,6 +124,8 @@ patagonix-ecommerce/
 │   │   ├── products/              → ProductsPage, ProductDetailPage
 
 │   │   ├── cart/                  → CartPage
+
+│   │   ├── favorites/             → FavoritesPage
 
 │   │   ├── checkout/              → CheckoutPage
 
@@ -139,6 +148,8 @@ patagonix-ecommerce/
 │   │   ├── products.service.ts    → incluye paginación con cursor (getProductsPage)
 
 │   │   ├── orders.service.ts
+
+│   │   ├── favorites.service.ts
 
 │   │   ├── upload.service.ts
 
@@ -252,6 +263,10 @@ npm run dev
 
 Las credenciales de AWS (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) **solo existen en la Serverless Function** y nunca se exponen al navegador. La presigned URL expira a los 5 minutos y solo autoriza la subida de ese archivo específico.
 
+## ❤️ Favoritos
+
+Los usuarios autenticados pueden marcar productos como favoritos desde el ícono de corazón en cada `ProductCard`, y acceder a la lista completa desde el ícono de corazón en el header (`/favorites`). A diferencia del carrito, los favoritos requieren sesión activa y persisten en Firestore (`favorites/{uid}`) en lugar de `localStorage`, para que estén disponibles desde cualquier dispositivo donde el usuario inicie sesión.
+
 ## 🧪 Testing
 
 ```bash
@@ -264,11 +279,11 @@ Suite de tests implementada (26 tests en total):
 |---------|-----------|
 | `cartReducer.test.ts` | Función pura del reducer: acciones, edge cases e inmutabilidad (10 tests) |
 | `useCart.test.tsx` | Custom hook con renderHook (5 tests) |
-| `ProductCard.test.tsx` | Componente con providers (6 tests) |
+| `ProductCard.test.tsx` | Componente con providers, incluyendo Favorites (6 tests) |
 | `CartPage.test.tsx` | Flujo de integración del carrito (4 tests) |
 | `CheckoutPage.test.tsx` | Flujo crítico: previene doble submit / órdenes duplicadas (1 test) |
 
-Firebase está mockeado (`src/test/mocks/firebase.ts`) para que los tests sean deterministas y no dependan de servicios externos ni de la red. El service de órdenes se mockea directamente en el test de checkout para aislar la lógica de UI del acceso real a Firestore.
+Firebase está mockeado (`src/test/mocks/firebase.ts`) para que los tests sean deterministas y no dependan de servicios externos ni de la red. El service de órdenes se mockea directamente en el test de checkout para aislar la lógica de UI del acceso real a Firestore. El wrapper de test (`test-utils.tsx`) compone `AuthProvider`, `FavoritesProvider` y `CartProvider`, de modo que cualquier componente que dependa de esos contextos se testea con su entorno real.
 
 ## 🚀 Scripts disponibles
 
