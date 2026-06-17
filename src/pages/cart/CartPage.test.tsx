@@ -9,6 +9,7 @@ import type { Product } from '../../types'
 const mockProduct: Product = {
   id: '1',
   name: 'Laptop Gaming',
+  nameLower: 'laptop gaming',
   description: 'Laptop de alta performance',
   price: 150000,
   stock: 10,
@@ -26,14 +27,12 @@ describe('CartPage - Flujo de integración', () => {
   })
 
   it('debe mostrar el producto y el total después de agregarlo al carrito', () => {
-    // Wrapper que comparte el mismo CartProvider entre el hook y el componente
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <CartProvider>{children}</CartProvider>
     )
 
     const { result } = renderHook(() => useCart(), { wrapper })
 
-    // Simulamos que el usuario agrega un producto
     act(() => {
       result.current.addItem(mockProduct)
     })
@@ -50,7 +49,6 @@ describe('CartPage - Flujo de integración', () => {
 
     const { result } = renderHook(() => useCart(), { wrapper })
 
-    // Agregamos el mismo producto 3 veces
     act(() => {
       result.current.addItem(mockProduct)
       result.current.addItem(mockProduct)

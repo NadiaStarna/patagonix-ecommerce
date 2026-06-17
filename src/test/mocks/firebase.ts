@@ -35,9 +35,17 @@ vi.mock('firebase/firestore', () => ({
   query: vi.fn(),
   where: vi.fn(),
   orderBy: vi.fn(),
+  startAt: vi.fn(),
+  endAt: vi.fn(),
+  startAfter: vi.fn(),
+  limit: vi.fn(),
   addDoc: vi.fn(),
   updateDoc: vi.fn(),
   deleteDoc: vi.fn(),
+  // serverTimestamp es la fuente confiable de fecha en el código real
+  // (reemplazó a Timestamp.now() en la Lectura 2); lo mockeamos devolviendo
+  // un valor simple porque en los tests no nos importa el timestamp exacto
+  serverTimestamp: vi.fn(() => new Date()),
   Timestamp: {
     now: vi.fn(() => ({ toDate: () => new Date() })),
   },
