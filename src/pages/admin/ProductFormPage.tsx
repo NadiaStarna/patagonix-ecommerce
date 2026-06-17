@@ -13,14 +13,26 @@ const CATEGORIES: { label: string; value: ProductCategory }[] = [
   { label: 'Otros', value: 'otros' },
 ]
 
+// Errores específicos por campo, todos opcionales
+// (solo aparecen los que tienen un problema en cada momento)
+interface FormErrors {
+  name?: string
+  description?: string
+  price?: string
+  stock?: string
+}
+
 export const ProductFormPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const isEditing = !!id
 
-  const [loading, setLoading] = useState(false)
+  // status como autómata explícito, en lugar de múltiples booleans sueltos
+  const [status, setStatus] = useState<'editing' | 'submitting' | 'success' | 'error'>('editing')
   const [loadingProduct, setLoadingProduct] = useState(isEditing)
-  const [error, setError] = useState<string | null>(null)
+  const [globalError, setGlobalError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
 
@@ -49,13 +61,60 @@ export const ProductFormPage = () => {
         })
         setImagePreview(product.imageUrl)
       } catch (err) {
-        setError('Error al cargar el producto')
+        setGlobalError('Error al cargar el producto')
       } finally {
         setLoadingProduct(false)
       }
     }
     fetchProduct()
   }, [id, isEditing])
+
+  // Valida un solo campo y devuelve su mensaje de error (o undefined si está bien)
+  const validateField = (field: keyof FormErrors, value: string): string | undefined => {
+    switch (field) {
+      case 'name':
+        return value.trim().length < 3 ? 'El nombre debe tener al menos 3 caracteres' : undefined
+      case 'description':
+        return value.trim().length < 10 ? 'La descripción debe tener al menos 10 caracteres' : undefined
+      case 'price': {
+        const price = Number(value)
+        return isNaN(price) || price <= 0 ? 'El precio debe ser mayor a 0' : undefined
+      }
+      case 'stock': {
+        const stock = Number(value)
+        return isNaN(stock) || stock < 0 ? 'El stock no puede ser negativo' : undefined
+      }
+      default:
+        return undefined
+    }
+  }
+
+  // Valida todos los campos, usado antes de enviar el formulario
+  const validateAll = (): FormErrors => {
+    return {
+      name: validateField('name', form.name),
+      description: validateField('description', form.description),
+      price: validateField('price', form.price),
+      stock: validateField('stock', form.stock),
+    }
+  }
+
+  // Se ejecuta cuando el usuario sale de un campo (pierde el foco)
+  const handleBlur = (field: keyof FormErrors) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+    const error = validateField(field, form[field])
+    setFieldErrors(prev => ({ ...prev, [field]: error }))
+  }
+
+  // Se ejecuta en cada cambio; si el campo ya fue "tocado" y tiene error,
+  // revalida en tiempo real para que el usuario vea cuándo se corrige
+  const handleFieldChange = (field: keyof FormErrors, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }))
+    if (touched[field]) {
+      const error = validateField(field, value)
+      setFieldErrors(prev => ({ ...prev, [field]: error }))
+    }
+  }
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -64,39 +123,20 @@ export const ProductFormPage = () => {
     setImagePreview(URL.createObjectURL(file))
   }
 
-  const validateForm = (): string | null => {
-    if (form.name.trim().length < 3) {
-      return 'El nombre debe tener al menos 3 caracteres'
-    }
-
-    if (form.description.trim().length < 10) {
-      return 'La descripción debe tener al menos 10 caracteres'
-    }
-
-    const price = Number(form.price)
-    if (isNaN(price) || price <= 0) {
-      return 'El precio debe ser un número mayor a 0'
-    }
-
-    const stock = Number(form.stock)
-    if (isNaN(stock) || stock < 0) {
-      return 'El stock debe ser un número mayor o igual a 0'
-    }
-
-    return null
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    setGlobalError(null)
 
-    const validationError = validateForm()
-    if (validationError) {
-      setError(validationError)
-      return
-    }
+    // Marcamos todos los campos como "touched" para que se muestren los errores
+    setTouched({ name: true, description: true, price: true, stock: true })
 
-    setLoading(true)
+    const errors = validateAll()
+    setFieldErrors(errors)
+
+    const hasErrors = Object.values(errors).some(Boolean)
+    if (hasErrors) return
+
+    setStatus('submitting')
 
     try {
       let imageUrl = form.imageUrl
@@ -128,15 +168,15 @@ export const ProductFormPage = () => {
         await createProduct(productData)
       }
 
+      setStatus('success')
       navigate(ROUTES.ADMIN_PRODUCTS)
     } catch (err: any) {
+      setStatus('error')
       if (err?.code === 'permission-denied') {
-        setError('No tenés permisos para esta acción. Si creés que es un error, reintentá loguearte o consultá al administrador.')
+        setGlobalError('No tenés permisos para esta acción. Si creés que es un error, reintentá loguearte o consultá al administrador.')
       } else {
-        setError('Ocurrió un error al guardar el producto. Intentá de nuevo.')
+        setGlobalError('Ocurrió un error al guardar el producto. Intentá de nuevo.')
       }
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -148,15 +188,18 @@ export const ProductFormPage = () => {
     )
   }
 
+  const isSubmitting = status === 'submitting'
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold text-navy mb-6">
         {isEditing ? 'Editar producto' : 'Nuevo producto'}
       </h1>
 
-      {error && (
+      {/* Error global: solo errores de backend/permisos, nunca de validación de campo */}
+      {globalError && (
         <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
-          {error}
+          {globalError}
         </div>
       )}
 
@@ -168,10 +211,16 @@ export const ProductFormPage = () => {
           <input
             type="text"
             value={form.name}
-            onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
-            required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+            onChange={e => handleFieldChange('name', e.target.value)}
+            onBlur={() => handleBlur('name')}
+            disabled={isSubmitting}
+            className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none disabled:bg-gray-100 ${
+              fieldErrors.name ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-teal'
+            }`}
           />
+          {fieldErrors.name && (
+            <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>
+          )}
         </div>
 
         {/* Descripción */}
@@ -179,11 +228,17 @@ export const ProductFormPage = () => {
           <label className="text-sm text-gray-600 mb-1 block">Descripción</label>
           <textarea
             value={form.description}
-            onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))}
-            required
+            onChange={e => handleFieldChange('description', e.target.value)}
+            onBlur={() => handleBlur('description')}
+            disabled={isSubmitting}
             rows={3}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal resize-none"
+            className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none resize-none disabled:bg-gray-100 ${
+              fieldErrors.description ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-teal'
+            }`}
           />
+          {fieldErrors.description && (
+            <p className="text-red-500 text-xs mt-1">{fieldErrors.description}</p>
+          )}
         </div>
 
         {/* Precio y Stock */}
@@ -193,23 +248,35 @@ export const ProductFormPage = () => {
             <input
               type="number"
               value={form.price}
-              onChange={e => setForm(prev => ({ ...prev, price: e.target.value }))}
-              required
+              onChange={e => handleFieldChange('price', e.target.value)}
+              onBlur={() => handleBlur('price')}
+              disabled={isSubmitting}
               min="0"
               step="0.01"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+              className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none disabled:bg-gray-100 ${
+                fieldErrors.price ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-teal'
+              }`}
             />
+            {fieldErrors.price && (
+              <p className="text-red-500 text-xs mt-1">{fieldErrors.price}</p>
+            )}
           </div>
           <div>
             <label className="text-sm text-gray-600 mb-1 block">Stock</label>
             <input
               type="number"
               value={form.stock}
-              onChange={e => setForm(prev => ({ ...prev, stock: e.target.value }))}
-              required
+              onChange={e => handleFieldChange('stock', e.target.value)}
+              onBlur={() => handleBlur('stock')}
+              disabled={isSubmitting}
               min="0"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+              className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none disabled:bg-gray-100 ${
+                fieldErrors.stock ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-teal'
+              }`}
             />
+            {fieldErrors.stock && (
+              <p className="text-red-500 text-xs mt-1">{fieldErrors.stock}</p>
+            )}
           </div>
         </div>
 
@@ -219,7 +286,8 @@ export const ProductFormPage = () => {
           <select
             value={form.category}
             onChange={e => setForm(prev => ({ ...prev, category: e.target.value as ProductCategory }))}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal"
+            disabled={isSubmitting}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal disabled:bg-gray-100"
           >
             {CATEGORIES.map(cat => (
               <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -241,10 +309,11 @@ export const ProductFormPage = () => {
             type="file"
             accept="image/*"
             onChange={handleImageChange}
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-navy file:text-white file:text-sm hover:file:bg-opacity-90"
+            disabled={isSubmitting}
+            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-navy file:text-white file:text-sm hover:file:bg-opacity-90 disabled:opacity-50"
           />
           <p className="text-xs text-gray-400 mt-1">
-            La imagen se sube a AWS S3
+            La imagen se sube a AWS S3. Si editás y no elegís una nueva, se mantiene la actual.
           </p>
         </div>
 
@@ -252,15 +321,16 @@ export const ProductFormPage = () => {
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
-            disabled={loading}
+            disabled={isSubmitting}
             className="bg-navy text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-opacity-90 transition disabled:opacity-50"
           >
-            {loading ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Crear producto'}
+            {isSubmitting ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear producto'}
           </button>
           <button
             type="button"
             onClick={() => navigate(ROUTES.ADMIN_PRODUCTS)}
-            className="border border-gray-300 text-gray-600 px-6 py-2 rounded-lg text-sm hover:bg-gray-50 transition"
+            disabled={isSubmitting}
+            className="border border-gray-300 text-gray-600 px-6 py-2 rounded-lg text-sm hover:bg-gray-50 transition disabled:opacity-50"
           >
             Cancelar
           </button>
