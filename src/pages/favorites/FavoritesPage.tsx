@@ -12,7 +12,6 @@ export const FavoritesPage = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Si todavía estamos esperando la lista de IDs favoritos, no hacemos nada
     if (favoritesLoading) return
 
     if (favoriteIds.length === 0) {
@@ -22,8 +21,6 @@ export const FavoritesPage = () => {
     }
 
     setLoading(true)
-    // Traemos cada producto favorito por su ID. Si alguno fue eliminado
-    // del catálogo, getProductById devuelve null y lo filtramos
     Promise.all(favoriteIds.map(id => getProductById(id)))
       .then(results => {
         const validProducts = results.filter((p): p is Product => p !== null)
@@ -38,17 +35,19 @@ export const FavoritesPage = () => {
 
   if (products.length === 0) {
     return (
-      <EmptyState
-        icon="♡"
-        title="Todavía no tenés favoritos"
-        description="Marcá productos con el corazón para encontrarlos rápido acá"
-      />
+      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center text-gray-400">
+        <EmptyState
+          icon="♡"
+          title="Todavía no tenés favoritos"
+          description="Marcá productos con el corazón para encontrarlos rápido."
+        />
+      </div>
     )
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-navy mb-6">Mis favoritos</h1>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-stone mb-6">Mis favoritos</h1>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.map(product => (
           <ProductCard key={product.id} product={product} />

@@ -5,12 +5,14 @@ import type { Product } from '../../types'
 import { ROUTES } from '../../routes/routes'
 import { useCart } from '../../contexts/cart'
 import { useAuth } from '../../contexts/auth'
+import { useToast } from '../../contexts/toast'
 
 export const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { addItem } = useCart()
   const { user } = useAuth()
+  const { showToast } = useToast()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
@@ -47,12 +49,17 @@ export const ProductDetailPage = () => {
     for (let i = 0; i < quantity; i++) {
       addItem(product)
     }
+    showToast({
+      title: 'Agregado al carrito',
+      description: `${product.name} x${quantity}`,
+    })
+    setQuantity(1)
   }
 
   if (loading) {
     return (
-      <div className="flex justify-center py-16">
-        <div className="w-10 h-10 border-4 border-teal border-t-transparent rounded-full animate-spin" />
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-glacier border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -64,7 +71,7 @@ export const ProductDetailPage = () => {
         <p className="text-lg font-medium">{error || 'Producto no encontrado'}</p>
         <button
           onClick={() => navigate(ROUTES.PRODUCTS)}
-          className="mt-4 bg-navy text-white px-6 py-2 rounded-lg text-sm hover:bg-opacity-90 transition"
+          className="mt-4 bg-stone text-white px-6 py-2 rounded-lg text-sm hover:bg-opacity-90 transition"
         >
           Volver al catálogo
         </button>
@@ -73,15 +80,15 @@ export const ProductDetailPage = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-5xl mx-auto px-4 py-8">
 
       {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-6">
-        <button onClick={() => navigate(ROUTES.PRODUCTS)} className="hover:text-navy transition">
+        <button onClick={() => navigate(ROUTES.PRODUCTS)} className="hover:text-stone transition">
           Productos
         </button>
         <span className="mx-2">/</span>
-        <span className="text-navy font-medium">{product.name}</span>
+        <span className="text-stone font-medium">{product.name}</span>
       </nav>
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -98,28 +105,22 @@ export const ProductDetailPage = () => {
 
           {/* Info */}
           <div className="p-8 flex flex-col gap-4">
-            {/* Categoría */}
-            <span className="bg-navy text-white text-xs px-3 py-1 rounded-full w-fit">
+            <span className="bg-stone text-white text-xs px-3 py-1 rounded-full w-fit">
               {product.category}
             </span>
 
-            {/* Nombre */}
-            <h1 className="text-2xl font-bold text-navy">{product.name}</h1>
+            <h1 className="text-2xl font-bold text-stone">{product.name}</h1>
 
-            {/* Precio */}
-            <p className="text-3xl font-bold text-teal">
+            <p className="text-3xl font-bold text-sunset">
               ${product.price.toLocaleString('es-AR')}
             </p>
 
-            {/* Descripción */}
             <p className="text-gray-500 text-sm leading-relaxed">{product.description}</p>
 
-            {/* Stock */}
-            <p className={`text-sm font-medium ${product.stock > 0 ? 'text-green-500' : 'text-red-500'}`}>
+            <p className={`text-sm font-medium ${product.stock > 0 ? 'text-moss' : 'text-red-500'}`}>
               {product.stock > 0 ? `✓ ${product.stock} unidades disponibles` : '✗ Sin stock'}
             </p>
 
-            {/* Cantidad */}
             {product.stock > 0 && (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600">Cantidad:</span>
@@ -141,19 +142,17 @@ export const ProductDetailPage = () => {
               </div>
             )}
 
-            {/* Botón agregar al carrito */}
             <button
               onClick={handleAddToCart}
               disabled={product.stock === 0}
-              className="bg-navy text-white py-3 rounded-lg font-semibold hover:bg-opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-stone text-white py-3 rounded-lg font-semibold hover:bg-opacity-90 active:scale-95 active:bg-glacier transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               🛒 Agregar al carrito
             </button>
 
-            {/* Volver */}
             <button
-              onClick={() => navigate(ROUTES.PRODUCTS)}
-              className="text-sm text-gray-500 hover:text-navy transition text-center"
+              onClick={() => navigate(ROUTES.PRODUCTS, { state: { scrollToCatalog: true } })}
+              className="text-sm text-gray-500 hover:text-stone transition text-center"
             >
               ← Volver al catálogo
             </button>

@@ -13,8 +13,6 @@ const CATEGORIES: { label: string; value: ProductCategory }[] = [
   { label: 'Otros', value: 'otros' },
 ]
 
-// Errores específicos por campo, todos opcionales
-// (solo aparecen los que tienen un problema en cada momento)
 interface FormErrors {
   name?: string
   description?: string
@@ -27,7 +25,6 @@ export const ProductFormPage = () => {
   const navigate = useNavigate()
   const isEditing = !!id
 
-  // status como autómata explícito, en lugar de múltiples booleans sueltos
   const [status, setStatus] = useState<'editing' | 'submitting' | 'success' | 'error'>('editing')
   const [loadingProduct, setLoadingProduct] = useState(isEditing)
   const [globalError, setGlobalError] = useState<string | null>(null)
@@ -69,7 +66,6 @@ export const ProductFormPage = () => {
     fetchProduct()
   }, [id, isEditing])
 
-  // Valida un solo campo y devuelve su mensaje de error (o undefined si está bien)
   const validateField = (field: keyof FormErrors, value: string): string | undefined => {
     switch (field) {
       case 'name':
@@ -89,7 +85,6 @@ export const ProductFormPage = () => {
     }
   }
 
-  // Valida todos los campos, usado antes de enviar el formulario
   const validateAll = (): FormErrors => {
     return {
       name: validateField('name', form.name),
@@ -99,15 +94,12 @@ export const ProductFormPage = () => {
     }
   }
 
-  // Se ejecuta cuando el usuario sale de un campo (pierde el foco)
   const handleBlur = (field: keyof FormErrors) => {
     setTouched(prev => ({ ...prev, [field]: true }))
     const error = validateField(field, form[field])
     setFieldErrors(prev => ({ ...prev, [field]: error }))
   }
 
-  // Se ejecuta en cada cambio; si el campo ya fue "tocado" y tiene error,
-  // revalida en tiempo real para que el usuario vea cuándo se corrige
   const handleFieldChange = (field: keyof FormErrors, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }))
     if (touched[field]) {
@@ -127,7 +119,6 @@ export const ProductFormPage = () => {
     e.preventDefault()
     setGlobalError(null)
 
-    // Marcamos todos los campos como "touched" para que se muestren los errores
     setTouched({ name: true, description: true, price: true, stock: true })
 
     const errors = validateAll()
@@ -182,8 +173,8 @@ export const ProductFormPage = () => {
 
   if (loadingProduct) {
     return (
-      <div className="flex justify-center py-16">
-        <div className="w-10 h-10 border-4 border-teal border-t-transparent rounded-full animate-spin" />
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-glacier border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -192,11 +183,10 @@ export const ProductFormPage = () => {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-navy mb-6">
+      <h1 className="text-2xl font-bold text-stone mb-6">
         {isEditing ? 'Editar producto' : 'Nuevo producto'}
       </h1>
 
-      {/* Error global: solo errores de backend/permisos, nunca de validación de campo */}
       {globalError && (
         <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
           {globalError}
@@ -205,7 +195,6 @@ export const ProductFormPage = () => {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-6 flex flex-col gap-4">
 
-        {/* Nombre */}
         <div>
           <label className="text-sm text-gray-600 mb-1 block">Nombre</label>
           <input
@@ -215,7 +204,7 @@ export const ProductFormPage = () => {
             onBlur={() => handleBlur('name')}
             disabled={isSubmitting}
             className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none disabled:bg-gray-100 ${
-              fieldErrors.name ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-teal'
+              fieldErrors.name ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-glacier'
             }`}
           />
           {fieldErrors.name && (
@@ -223,7 +212,6 @@ export const ProductFormPage = () => {
           )}
         </div>
 
-        {/* Descripción */}
         <div>
           <label className="text-sm text-gray-600 mb-1 block">Descripción</label>
           <textarea
@@ -233,7 +221,7 @@ export const ProductFormPage = () => {
             disabled={isSubmitting}
             rows={3}
             className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none resize-none disabled:bg-gray-100 ${
-              fieldErrors.description ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-teal'
+              fieldErrors.description ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-glacier'
             }`}
           />
           {fieldErrors.description && (
@@ -241,7 +229,6 @@ export const ProductFormPage = () => {
           )}
         </div>
 
-        {/* Precio y Stock */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm text-gray-600 mb-1 block">Precio</label>
@@ -254,7 +241,7 @@ export const ProductFormPage = () => {
               min="0"
               step="0.01"
               className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none disabled:bg-gray-100 ${
-                fieldErrors.price ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-teal'
+                fieldErrors.price ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-glacier'
               }`}
             />
             {fieldErrors.price && (
@@ -271,7 +258,7 @@ export const ProductFormPage = () => {
               disabled={isSubmitting}
               min="0"
               className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none disabled:bg-gray-100 ${
-                fieldErrors.stock ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-teal'
+                fieldErrors.stock ? 'border-red-400 focus:border-red-400' : 'border-gray-300 focus:border-glacier'
               }`}
             />
             {fieldErrors.stock && (
@@ -280,14 +267,13 @@ export const ProductFormPage = () => {
           </div>
         </div>
 
-        {/* Categoría */}
         <div>
           <label className="text-sm text-gray-600 mb-1 block">Categoría</label>
           <select
             value={form.category}
             onChange={e => setForm(prev => ({ ...prev, category: e.target.value as ProductCategory }))}
             disabled={isSubmitting}
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-teal disabled:bg-gray-100"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-glacier disabled:bg-gray-100"
           >
             {CATEGORIES.map(cat => (
               <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -295,7 +281,6 @@ export const ProductFormPage = () => {
           </select>
         </div>
 
-        {/* Imagen */}
         <div>
           <label className="text-sm text-gray-600 mb-1 block">Imagen</label>
           {imagePreview && (
@@ -310,19 +295,18 @@ export const ProductFormPage = () => {
             accept="image/*"
             onChange={handleImageChange}
             disabled={isSubmitting}
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-navy file:text-white file:text-sm hover:file:bg-opacity-90 disabled:opacity-50"
+            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-stone file:text-white file:text-sm hover:file:bg-opacity-90 disabled:opacity-50"
           />
           <p className="text-xs text-gray-400 mt-1">
             La imagen se sube a AWS S3. Si editás y no elegís una nueva, se mantiene la actual.
           </p>
         </div>
 
-        {/* Botones */}
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-navy text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-opacity-90 transition disabled:opacity-50"
+            className="bg-stone text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-opacity-90 transition disabled:opacity-50"
           >
             {isSubmitting ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear producto'}
           </button>

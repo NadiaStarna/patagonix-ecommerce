@@ -2,6 +2,7 @@ import { AuthProvider } from './auth'
 import { ProductsProvider } from './products'
 import { FavoritesProvider } from './favorites'
 import { CartProvider } from './cart'
+import { ToastProvider } from './toast'
 
 interface AppProvidersProps {
   children: React.ReactNode
@@ -9,14 +10,16 @@ interface AppProvidersProps {
 
 export const AppProviders = ({ children }: AppProvidersProps) => {
   return (
-    <AuthProvider>
-      <ProductsProvider>
-        <FavoritesProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
-        </FavoritesProvider>
-      </ProductsProvider>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <ProductsProvider>
+          <FavoritesProvider>
+            <CartProvider>
+              {children}
+            </CartProvider>
+          </FavoritesProvider>
+        </ProductsProvider>
+      </AuthProvider>
+    </ToastProvider>
   )
 }

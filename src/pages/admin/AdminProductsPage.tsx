@@ -45,8 +45,8 @@ export const AdminProductsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-16">
-        <div className="w-10 h-10 border-4 border-teal border-t-transparent rounded-full animate-spin" />
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-glacier border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -54,10 +54,10 @@ export const AdminProductsPage = () => {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-navy">Productos</h1>
+        <h1 className="text-2xl font-bold text-stone">Productos</h1>
         <Link
           to={ROUTES.ADMIN_PRODUCT_NEW}
-          className="bg-navy text-white px-4 py-2 rounded-lg text-sm hover:bg-opacity-90 transition"
+          className="bg-stone text-white px-4 py-2 rounded-lg text-sm hover:bg-opacity-90 transition"
         >
           + Nuevo producto
         </Link>
@@ -75,7 +75,7 @@ export const AdminProductsPage = () => {
           <p className="text-lg font-medium">No hay productos todavía</p>
           <Link
             to={ROUTES.ADMIN_PRODUCT_NEW}
-            className="mt-4 inline-block bg-navy text-white px-6 py-2 rounded-lg text-sm"
+            className="mt-4 inline-block bg-stone text-white px-6 py-2 rounded-lg text-sm"
           >
             Crear primer producto
           </Link>
@@ -104,11 +104,11 @@ export const AdminProductsPage = () => {
                           alt={product.name}
                           className="w-10 h-10 object-cover rounded-lg"
                         />
-                        <span className="font-medium text-navy">{product.name}</span>
+                        <span className="font-medium text-stone">{product.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-500">{product.category}</td>
-                    <td className="px-6 py-4 font-medium text-teal">
+                    <td className="px-6 py-4 font-medium text-sunset">
                       ${product.price.toLocaleString('es-AR')}
                     </td>
                     <td className="px-6 py-4">
@@ -122,7 +122,7 @@ export const AdminProductsPage = () => {
                       <div className="flex items-center gap-2">
                         <Link
                           to={ROUTES.ADMIN_PRODUCT_EDIT.replace(':id', product.id)}
-                          className={`text-teal hover:underline text-xs ${isDeleting ? 'pointer-events-none opacity-50' : ''}`}
+                          className={`text-glacier hover:underline text-xs ${isDeleting ? 'pointer-events-none opacity-50' : ''}`}
                         >
                           Editar
                         </Link>

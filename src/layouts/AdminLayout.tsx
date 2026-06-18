@@ -19,10 +19,10 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     <div className="min-h-screen bg-gray-100 flex">
 
       {/* Sidebar */}
-      <aside className="w-64 bg-navy text-white flex flex-col">
+      <aside className="w-64 bg-stone text-white flex flex-col">
         <div className="p-6 border-b border-white/10">
-          <h1 className="text-xl font-bold text-gold">Patagonix</h1>
-          <p className="text-xs text-aqua mt-1">Panel de administración</p>
+          <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-display)' }}>Patagonix</h1>
+          <p className="text-xs text-gray-300 mt-1">Panel de administración</p>
         </div>
 
         <nav className="flex-1 p-4 flex flex-col gap-2">
@@ -47,7 +47,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         </nav>
 
         <div className="p-4 border-t border-white/10">
-          <p className="text-xs text-aqua mb-2">{user?.displayName}</p>
+          <p className="text-xs text-gray-300 mb-2">{user?.displayName}</p>
           <button
             onClick={handleLogout}
             className="w-full text-sm bg-white/10 hover:bg-white/20 py-2 rounded-lg transition"

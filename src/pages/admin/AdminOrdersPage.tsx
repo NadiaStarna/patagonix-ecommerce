@@ -64,15 +64,15 @@ export const AdminOrdersPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-16">
-        <div className="w-10 h-10 border-4 border-teal border-t-transparent rounded-full animate-spin" />
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-glacier border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-navy mb-6">Órdenes</h1>
+      <h1 className="text-2xl font-bold text-stone mb-6">Órdenes</h1>
 
       {error && (
         <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
@@ -80,14 +80,13 @@ export const AdminOrdersPage = () => {
         </div>
       )}
 
-      {/* Filtros */}
       <div className="flex gap-2 flex-wrap mb-6">
         <button
           onClick={() => setStatusFilter('todas')}
           className={`px-4 py-1 rounded-full text-sm font-medium transition ${
             statusFilter === 'todas'
-              ? 'bg-navy text-white'
-              : 'bg-white text-navy border border-navy hover:bg-navy hover:text-white'
+              ? 'bg-stone text-white'
+              : 'bg-white text-stone border border-stone hover:bg-stone hover:text-white'
           }`}
         >
           Todas
@@ -98,8 +97,8 @@ export const AdminOrdersPage = () => {
             onClick={() => setStatusFilter(opt.value)}
             className={`px-4 py-1 rounded-full text-sm font-medium transition ${
               statusFilter === opt.value
-                ? 'bg-navy text-white'
-                : 'bg-white text-navy border border-navy hover:bg-navy hover:text-white'
+                ? 'bg-stone text-white'
+                : 'bg-white text-stone border border-stone hover:bg-stone hover:text-white'
             }`}
           >
             {opt.label}
@@ -129,13 +128,13 @@ export const AdminOrdersPage = () => {
                 const status = STATUS_LABELS[order.status]
                 return (
                   <tr key={order.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 font-medium text-navy">
+                    <td className="px-6 py-4 font-medium text-stone">
                       #{order.id.slice(0, 8).toUpperCase()}
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs">
                       {order.userId.slice(0, 8)}...
                     </td>
-                    <td className="px-6 py-4 font-medium text-teal">
+                    <td className="px-6 py-4 font-medium text-sunset">
                       ${order.total.toLocaleString('es-AR')}
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs">

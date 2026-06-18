@@ -2,9 +2,26 @@
 
 /* stylelint-disable-next-line at-rule-no-unknown */
 @theme {
-  --color-navy: #083A4F;
-  --color-gold: #A58D66;
-  --color-teal: #407E8C;
-  --color-aqua: #C0D5D6;
-  --color-sand: #E5E1DD;
+  --color-stone: #2B2E33;
+  --color-glacier: #4A7C8C;
+  --color-sunset: #C9763A;
+  --color-fog: #F4F2EE;
+  --color-moss: #5C6B4F;
+  --color-dusk: #4A2E4A;
+  --font-display: 'Fraunces', serif;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.6);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
 }

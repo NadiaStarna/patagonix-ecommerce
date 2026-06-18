@@ -6,18 +6,18 @@ interface MainLayoutProps {
 
 export const MainLayout = ({ children }: MainLayoutProps) => {
   return (
-    <div className="min-h-screen bg-sand flex flex-col">
+    <div className="min-h-screen bg-fog flex flex-col">
 
       {/* Navbar siempre arriba */}
       <Navbar />
 
       {/* Contenido de la página */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+      <main className="flex-1 w-full">
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="bg-navy text-white text-center py-4 text-sm">
+      <footer className="bg-stone text-white text-center py-4 text-sm">
         © 2026 Patagonix — Todos los derechos reservados
       </footer>
 
