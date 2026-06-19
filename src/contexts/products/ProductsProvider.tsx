@@ -35,8 +35,13 @@ export const ProductsProvider = ({ children }: { children: React.ReactNode }) =>
     } catch (err) {
       setError('Error al cargar los productos')
     } finally {
-      setLoading(false)
-      setSearching(false)
+      // Pequeño delay para que React termine de renderizar las cards
+      // antes de ocultar el spinner, evitando pantalla vacía entre
+      // que desaparece el spinner y aparecen los productos
+      setTimeout(() => {
+        setLoading(false)
+        setSearching(false)
+      }, 300)
     }
   }, [])
 

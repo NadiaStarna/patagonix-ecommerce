@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
+// src/pages/products/ProductsPage.tsx
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useProducts } from '../../contexts/products'
 import { ProductCard } from '../../components/common/ProductCard'
 import { Hero } from '../../components/common/Hero'
-import { LoadingState } from '../../components/common/LoadingState'
 import { EmptyState } from '../../components/common/EmptyState'
 import { ErrorState } from '../../components/common/ErrorState'
 import { Search } from 'lucide-react'
@@ -20,6 +20,7 @@ const CATEGORIES: { label: string; value: ProductCategory | 'todas' }[] = [
 
 export const ProductsPage = () => {
   const location = useLocation()
+  const [imagesReady, setImagesReady] = useState(false)
   const {
     products,
     loading,
@@ -42,13 +43,42 @@ export const ProductsPage = () => {
     }
   }, [location.state])
 
+  useEffect(() => {
+    if (loading || products.length === 0) {
+      setImagesReady(false)
+      return
+    }
+
+    const imagePromises = products.map(product => {
+      return new Promise<void>(resolve => {
+        const img = new Image()
+        img.onload = () => resolve()
+        img.onerror = () => resolve()
+        img.src = product.imageUrl
+      })
+    })
+
+    Promise.all(imagePromises).then(() => setImagesReady(true))
+  }, [products, loading])
+
+  const showSpinner = loading || (!imagesReady && products.length > 0)
+
+  // Mientras carga, mostramos solo el spinner — nada más
+  if (showSpinner && !searching) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-3 bg-fog z-50">
+        <div className="w-10 h-10 border-4 border-glacier border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-gray-400">Cargando productos...</p>
+      </div>
+    )
+  }
+
   return (
     <div>
       <Hero />
 
       <div id="catalogo" className="max-w-7xl mx-auto px-4 py-8">
 
-        {/* Buscador con lupita + dropdown de categorías en la misma fila */}
         <div className="flex gap-3 mb-6">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -72,8 +102,6 @@ export const ProductsPage = () => {
           </select>
         </div>
 
-        {loading && !searching && <LoadingState message="Cargando productos..." />}
-
         {error && <ErrorState message={error} onRetry={refetchProducts} />}
 
         {!loading && !error && products.length === 0 && (
@@ -84,7 +112,7 @@ export const ProductsPage = () => {
           />
         )}
 
-        {products.length > 0 && (
+        {imagesReady && products.length > 0 && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((product: typeof products[number]) => (
