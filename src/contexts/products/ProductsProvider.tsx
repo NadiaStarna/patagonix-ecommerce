@@ -1,3 +1,4 @@
+// src/contexts/products/ProductsProvider.tsx
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { getProductsPage } from '../../services/products.service'
 import { ProductsContext } from './ProductsContext'
@@ -27,7 +28,6 @@ export const ProductsProvider = ({ children }: { children: React.ReactNode }) =>
       setHasMore(result.hasMore)
       lastDocRef.current = result.lastDoc
     } catch (err) {
-      // TEMPORAL: logueamos el error real para diagnosticar el índice faltante
       setError('Error al cargar los productos')
     } finally {
       setLoading(false)
@@ -70,7 +70,7 @@ export const ProductsProvider = ({ children }: { children: React.ReactNode }) =>
   useEffect(() => {
     const timer = setTimeout(() => {
       loadFirstPage(selectedCategory, searchQuery)
-    }, 400)
+    }, 700)
 
     return () => clearTimeout(timer)
   }, [searchQuery])
