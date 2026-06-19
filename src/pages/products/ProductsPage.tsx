@@ -1,4 +1,3 @@
-// src/pages/products/ProductsPage.tsx
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useProducts } from '../../contexts/products'
@@ -7,6 +6,7 @@ import { Hero } from '../../components/common/Hero'
 import { LoadingState } from '../../components/common/LoadingState'
 import { EmptyState } from '../../components/common/EmptyState'
 import { ErrorState } from '../../components/common/ErrorState'
+import { Search } from 'lucide-react'
 import type { ProductCategory } from '../../types'
 
 const CATEGORIES: { label: string; value: ProductCategory | 'todas' }[] = [
@@ -42,39 +42,38 @@ export const ProductsPage = () => {
     }
   }, [location.state])
 
+  const selectedLabel = CATEGORIES.find(c => c.value === selectedCategory)?.label ?? 'Todas'
+
   return (
     <div>
       <Hero />
 
       <div id="catalogo" className="max-w-7xl mx-auto px-4 py-8">
 
-        <div className="mb-6">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Buscar productos..."
-            className="w-full border border-gray-300 bg-white text-stone rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-glacier"
-          />
+        {/* Buscador con lupita + dropdown de categorías en la misma fila */}
+        <div className="flex gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Buscar productos..."
+              className="w-full border border-gray-300 bg-white text-stone rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-glacier"
+            />
+          </div>
+
+          <select
+            value={selectedCategory}
+            onChange={e => setSelectedCategory(e.target.value as ProductCategory | 'todas')}
+            className="border border-gray-300 bg-white text-stone rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-glacier"
+          >
+            {CATEGORIES.map(cat => (
+              <option key={cat.value} value={cat.value}>{cat.label}</option>
+            ))}
+          </select>
         </div>
 
-        <div className="flex justify-start gap-2 flex-wrap mb-6">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.value}
-              onClick={() => setSelectedCategory(cat.value)}
-              className={`px-4 py-1 rounded-full text-sm font-medium transition ${
-                selectedCategory === cat.value
-                  ? 'bg-stone text-white'
-                  : 'bg-white text-stone border border-stone hover:bg-stone hover:text-white'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Solo mostramos el loading en la carga inicial, no durante la búsqueda */}
         {loading && !searching && <LoadingState message="Cargando productos..." />}
 
         {error && <ErrorState message={error} onRetry={refetchProducts} />}

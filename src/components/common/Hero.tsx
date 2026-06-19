@@ -46,11 +46,11 @@ export const Hero = () => {
           <span className="block text-4xl md:text-6xl font-normal italic text-amber-100 -mt-2">empieza acá.</span>
         </h1>
 
-        <p className="relative z-10 text-sm md:text-base text-amber-100 font-medium mt-3 mb-5 max-w-sm leading-relaxed">
+        <p className="relative z-10 text-sm md:text-base text-amber-100 font-medium mt-3 mb-4 max-w-sm leading-relaxed">
           Equipamiento outdoor y de trekking inspirado en las condiciones únicas de la Patagonia.
         </p>
 
-        <a href="#catalogo" className="relative z-10 inline-block bg-sunset text-white px-7 py-3 rounded-lg text-sm font-semibold mb-16 hover:bg-opacity-90 transition">Ver catalogo</a>
+        <a href="#catalogo" className="relative z-10 inline-block bg-sunset text-white px-7 py-3 rounded-lg text-sm font-semibold mb-8 hover:bg-opacity-90 transition">Ver catalogo</a>
       </div>
 
       <svg viewBox="0 0 700 320" className="absolute bottom-0 left-0 w-full h-48 z-0" preserveAspectRatio="none">
