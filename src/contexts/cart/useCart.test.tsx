@@ -7,6 +7,7 @@ import type { Product } from '../../types'
 const mockProduct: Product = {
   id: '1',
   name: 'Producto Test',
+  nameLower: 'producto test',
   description: 'Descripción de prueba',
   price: 100,
   stock: 10,
@@ -16,7 +17,6 @@ const mockProduct: Product = {
   updatedAt: new Date(),
 }
 
-// Wrapper que provee el CartProvider para el hook
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <CartProvider>{children}</CartProvider>
 )
@@ -74,7 +74,6 @@ describe('useCart', () => {
   })
 
   it('debe lanzar un error si se usa fuera del CartProvider', () => {
-    // Sin wrapper, debe lanzar el error que definimos en useCart.ts
     expect(() => {
       renderHook(() => useCart())
     }).toThrow('useCart debe usarse dentro de un CartProvider')
