@@ -1,3 +1,4 @@
+// src/pages/orders/OrdersPage.tsx
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/auth'
@@ -58,17 +59,17 @@ export const OrdersPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-16">
+      <div className="fixed inset-0 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-glacier border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="max-w-2xl mx-auto pt-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-stone">Mis órdenes</h1>
+    <div className="max-w-2xl mx-auto pt-8 pb-8">
 
+      <div className="flex items-center justify-between mb-6 px-4">
+        <h1 className="text-2xl font-bold text-stone">Mis órdenes</h1>
         {orders.length > 0 && (
           <select
             value={statusFilter}
@@ -84,19 +85,19 @@ export const OrdersPage = () => {
       </div>
 
       {justConfirmed && (
-        <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">
+        <div className="mx-4 bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4">
           ¡Compra confirmada con éxito! 🎉
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
+        <div className="mx-4 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
           {error}
         </div>
       )}
 
       {orders.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center text-gray-400 px-4">
           <p className="text-4xl mb-3">📦</p>
           <p className="text-lg font-medium">Todavía no tenés órdenes</p>
           <Link to={ROUTES.PRODUCTS} className="mt-4 inline-block bg-stone text-white px-6 py-2 rounded-lg text-sm">
@@ -104,12 +105,12 @@ export const OrdersPage = () => {
           </Link>
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-gray-400 px-4">
           <p className="text-4xl mb-3">🔍</p>
           <p className="text-lg font-medium">No tenés órdenes con ese estado</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 px-4">
           {filteredOrders.map(order => (
             <Link
               key={order.id}
