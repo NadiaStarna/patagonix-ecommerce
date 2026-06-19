@@ -13,7 +13,7 @@ const mockProduct: Product = {
   description: 'Laptop de alta performance',
   price: 150000,
   stock: 10,
-  category: 'electronica',
+  category: 'tecnologia',
   imageUrl: 'https://placehold.co/400',
   createdAt: new Date(),
   updatedAt: new Date(),

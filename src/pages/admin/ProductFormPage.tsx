@@ -6,11 +6,11 @@ import type { ProductCategory } from '../../types'
 import { ROUTES } from '../../routes/routes'
 
 const CATEGORIES: { label: string; value: ProductCategory }[] = [
-  { label: 'Electrónica', value: 'electronica' },
-  { label: 'Ropa', value: 'ropa' },
-  { label: 'Hogar', value: 'hogar' },
-  { label: 'Deportes', value: 'deportes' },
-  { label: 'Otros', value: 'otros' },
+  { label: 'Trekking', value: 'trekking' },
+  { label: 'Indumentaria', value: 'indumentaria' },
+  { label: 'Tecnología', value: 'tecnologia' },
+  { label: 'Camping', value: 'camping' },
+  { label: 'Accesorios', value: 'accesorios' },
 ]
 
 interface FormErrors {
@@ -38,7 +38,7 @@ export const ProductFormPage = () => {
     description: '',
     price: '',
     stock: '',
-    category: 'electronica' as ProductCategory,
+    category: 'trekking' as ProductCategory,
     imageUrl: '',
   })
 

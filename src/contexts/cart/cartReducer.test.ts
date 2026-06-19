@@ -10,7 +10,7 @@ const mockProduct: Product = {
   description: 'Descripción de prueba',
   price: 100,
   stock: 10,
-  category: 'otros',
+  category: 'accesorios',
   imageUrl: 'https://placehold.co/400',
   createdAt: new Date(),
   updatedAt: new Date(),

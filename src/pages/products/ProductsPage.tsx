@@ -10,11 +10,11 @@ import type { ProductCategory } from '../../types'
 
 const CATEGORIES: { label: string; value: ProductCategory | 'todas' }[] = [
   { label: 'Todas', value: 'todas' },
-  { label: 'Electrónica', value: 'electronica' },
-  { label: 'Ropa', value: 'ropa' },
-  { label: 'Hogar', value: 'hogar' },
-  { label: 'Deportes', value: 'deportes' },
-  { label: 'Otros', value: 'otros' },
+  { label: 'Trekking', value: 'trekking' },
+  { label: 'Indumentaria', value: 'indumentaria' },
+  { label: 'Tecnología', value: 'tecnologia' },
+  { label: 'Camping', value: 'camping' },
+  { label: 'Accesorios', value: 'accesorios' },
 ]
 
 export const ProductsPage = () => {
