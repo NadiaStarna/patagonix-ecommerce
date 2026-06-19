@@ -1,3 +1,4 @@
+// src/components/common/Navbar.tsx
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ShoppingCart, Heart, Mountain } from 'lucide-react'
 import { useAuth } from '../../contexts/auth'
@@ -38,7 +39,7 @@ export const Navbar = () => {
           </span>
         </Link>
 
-        {/* Navegación central */}
+        {/* Navegación central — solo desktop */}
         <nav className="hidden md:flex items-center gap-6 text-sm shrink-0">
           <a href="#catalogo" onClick={handleProductsClick} className="hover:text-sunset transition-colors">
             Productos
@@ -51,13 +52,15 @@ export const Navbar = () => {
         </nav>
 
         {/* Acciones derecha */}
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           {user ? (
             <>
+              {/* Saludo — solo desktop */}
               <span className="text-sm text-gray-300 hidden md:block truncate max-w-[200px]" title={user.displayName}>
                 ¡Hola, {user.displayName.toUpperCase()}!
               </span>
 
+              {/* Favoritos */}
               <Link to={ROUTES.FAVORITES} className="hover:text-sunset transition-colors relative shrink-0">
                 <Heart
                   size={22}
@@ -70,6 +73,7 @@ export const Navbar = () => {
                 )}
               </Link>
 
+              {/* Carrito */}
               <Link to={ROUTES.CART} className="hover:text-sunset transition-colors relative shrink-0">
                 <ShoppingCart size={22} />
                 {itemCount > 0 && (
@@ -79,10 +83,12 @@ export const Navbar = () => {
                 )}
               </Link>
 
-              <Link to={ROUTES.ORDERS} className="text-sm underline decoration-white/40 hover:decoration-sunset hover:text-sunset transition-colors shrink-0">
+              {/* Mis órdenes — solo desktop */}
+              <Link to={ROUTES.ORDERS} className="hidden md:block text-sm underline decoration-white/40 hover:decoration-sunset hover:text-sunset transition-colors shrink-0">
                 Mis órdenes
               </Link>
 
+              {/* Salir */}
               <button
                 onClick={handleLogout}
                 className="text-sm bg-sunset hover:bg-opacity-80 text-white px-3 py-1 rounded transition-colors shrink-0"
