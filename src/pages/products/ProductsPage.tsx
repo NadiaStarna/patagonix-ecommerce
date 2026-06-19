@@ -42,8 +42,6 @@ export const ProductsPage = () => {
     }
   }, [location.state])
 
-  const selectedLabel = CATEGORIES.find(c => c.value === selectedCategory)?.label ?? 'Todas'
-
   return (
     <div>
       <Hero />
