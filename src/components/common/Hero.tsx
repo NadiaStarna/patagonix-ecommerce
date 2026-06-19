@@ -41,12 +41,12 @@ export const Hero = () => {
 
       <div className="max-w-7xl mx-auto px-8 md:px-16">
         <h1 className="relative z-10 leading-none mb-2" style={{ fontFamily: 'var(--font-display)' }}>
-          <span className="block text-5xl font-normal text-stone-100">Tu próxima</span>
-          <span className="block text-8xl font-bold text-white -mt-2">aventura</span>
-          <span className="block text-6xl font-normal italic text-amber-100 -mt-2">empieza acá.</span>
+          <span className="block text-3xl md:text-5xl font-normal text-stone-100">Tu próxima</span>
+          <span className="block text-6xl md:text-8xl font-bold text-white -mt-2">aventura</span>
+          <span className="block text-4xl md:text-6xl font-normal italic text-amber-100 -mt-2">empieza acá.</span>
         </h1>
 
-        <p className="relative z-10 text-base text-amber-100 font-medium mt-3 mb-5 max-w-sm leading-relaxed">
+        <p className="relative z-10 text-sm md:text-base text-amber-100 font-medium mt-3 mb-5 max-w-sm leading-relaxed">
           Equipamiento outdoor y de trekking inspirado en las condiciones únicas de la Patagonia.
         </p>
 

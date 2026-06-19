@@ -1,4 +1,3 @@
-// src/components/common/Navbar.tsx
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ShoppingCart, Heart, Mountain } from 'lucide-react'
 import { useAuth } from '../../contexts/auth'
