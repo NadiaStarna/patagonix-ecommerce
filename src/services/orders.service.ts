@@ -7,6 +7,7 @@ import {
   query, 
   where,
   updateDoc,
+  deleteDoc,
   serverTimestamp,
   orderBy
 } from 'firebase/firestore'
@@ -60,4 +61,9 @@ export const updateOrderStatus = async (orderId: string, status: OrderStatus): P
     status,
     updatedAt: serverTimestamp()
   })
+}
+
+// Eliminar una orden (solo admin)
+export const deleteOrder = async (orderId: string): Promise<void> => {
+  await deleteDoc(doc(ordersRef, orderId))
 }

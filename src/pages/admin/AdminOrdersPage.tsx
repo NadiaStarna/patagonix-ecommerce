@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { getAllOrders, updateOrderStatus } from '../../services/orders.service'
+import { getAllOrders, updateOrderStatus, deleteOrder } from '../../services/orders.service'
+import { Trash2 } from 'lucide-react'
 import type { Order, OrderStatus } from '../../types'
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -22,6 +23,7 @@ export const AdminOrdersPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'todas'>('todas')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -55,10 +57,27 @@ export const AdminOrdersPage = () => {
       ))
     } catch (err: any) {
       if (err?.code === 'permission-denied') {
-        alert('No tenés permisos para cambiar el estado de las órdenes. Reintentá loguearte o consultá al administrador.')
+        alert('No tenés permisos para cambiar el estado de las órdenes.')
       } else {
         alert('Error al actualizar el estado. Intentá de nuevo.')
       }
+    }
+  }
+
+  const handleDelete = async (orderId: string) => {
+    if (!confirm('¿Estás segura de eliminar esta orden? Esta acción no se puede deshacer.')) return
+    try {
+      setDeletingId(orderId)
+      await deleteOrder(orderId)
+      setOrders(prev => prev.filter(o => o.id !== orderId))
+    } catch (err: any) {
+      if (err?.code === 'permission-denied') {
+        alert('No tenés permisos para eliminar órdenes.')
+      } else {
+        alert('Error al eliminar la orden. Intentá de nuevo.')
+      }
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -72,39 +91,25 @@ export const AdminOrdersPage = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-stone mb-6">Órdenes</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-stone">Órdenes</h1>
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value as OrderStatus | 'todas')}
+          className="border border-gray-300 bg-white text-stone rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-glacier"
+        >
+          <option value="todas">Todas</option>
+          {STATUS_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
 
       {error && (
         <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
           {error}
         </div>
       )}
-
-      <div className="flex gap-2 flex-wrap mb-6">
-        <button
-          onClick={() => setStatusFilter('todas')}
-          className={`px-4 py-1 rounded-full text-sm font-medium transition ${
-            statusFilter === 'todas'
-              ? 'bg-stone text-white'
-              : 'bg-white text-stone border border-stone hover:bg-stone hover:text-white'
-          }`}
-        >
-          Todas
-        </button>
-        {STATUS_OPTIONS.map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => setStatusFilter(opt.value)}
-            className={`px-4 py-1 rounded-full text-sm font-medium transition ${
-              statusFilter === opt.value
-                ? 'bg-stone text-white'
-                : 'bg-white text-stone border border-stone hover:bg-stone hover:text-white'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
 
       {filteredOrders.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
@@ -121,11 +126,13 @@ export const AdminOrdersPage = () => {
                 <th className="px-6 py-3 text-left">Total</th>
                 <th className="px-6 py-3 text-left">Fecha</th>
                 <th className="px-6 py-3 text-left">Estado</th>
+                <th className="px-6 py-3 text-left"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredOrders.map(order => {
                 const status = STATUS_LABELS[order.status]
+                const isDeleting = deletingId === order.id
                 return (
                   <tr key={order.id} className="hover:bg-gray-50 transition">
                     <td className="px-6 py-4 font-medium text-stone">
@@ -146,6 +153,7 @@ export const AdminOrdersPage = () => {
                       <select
                         value={order.status}
                         onChange={e => handleStatusChange(order.id, e.target.value as OrderStatus)}
+                        disabled={isDeleting}
                         className={`text-xs px-2 py-1 rounded-full font-medium border-0 cursor-pointer ${status.color}`}
                       >
                         {STATUS_OPTIONS.map(opt => (
@@ -154,6 +162,16 @@ export const AdminOrdersPage = () => {
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => handleDelete(order.id)}
+                        disabled={isDeleting}
+                        className="text-gray-300 hover:text-red-400 transition disabled:opacity-50"
+                        aria-label="Eliminar orden"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 )

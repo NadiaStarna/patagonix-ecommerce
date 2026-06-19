@@ -18,14 +18,14 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   return (
     <div className="min-h-screen bg-gray-100 flex">
 
-      {/* Sidebar */}
-      <aside className="w-64 bg-stone text-white flex flex-col">
-        <div className="p-6 border-b border-white/10">
+      {/* Sidebar con altura fija y scroll interno */}
+      <aside className="w-64 bg-stone text-white flex flex-col h-screen sticky top-0">
+        <div className="p-6 border-b border-white/10 shrink-0">
           <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-display)' }}>Patagonix</h1>
           <p className="text-xs text-gray-300 mt-1">Panel de administración</p>
         </div>
 
-        <nav className="flex-1 p-4 flex flex-col gap-2">
+        <nav className="flex-1 p-4 flex flex-col gap-2 overflow-y-auto">
           <Link
             to={ROUTES.ADMIN_PRODUCTS}
             className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/10 transition text-sm"
@@ -46,7 +46,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
           </Link>
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        {/* Cerrar sesión siempre visible abajo */}
+        <div className="p-4 border-t border-white/10 shrink-0">
           <p className="text-xs text-gray-300 mb-2">{user?.displayName}</p>
           <button
             onClick={handleLogout}
