@@ -1,3 +1,4 @@
+// src/pages/products/ProductsPage.tsx
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useProducts } from '../../contexts/products'
@@ -22,6 +23,7 @@ export const ProductsPage = () => {
   const {
     products,
     loading,
+    searching,
     loadingMore,
     hasMore,
     error,
@@ -72,7 +74,8 @@ export const ProductsPage = () => {
           ))}
         </div>
 
-        {loading && <LoadingState message="Cargando productos..." />}
+        {/* Solo mostramos el loading en la carga inicial, no durante la búsqueda */}
+        {loading && !searching && <LoadingState message="Cargando productos..." />}
 
         {error && <ErrorState message={error} onRetry={refetchProducts} />}
 
@@ -84,7 +87,7 @@ export const ProductsPage = () => {
           />
         )}
 
-        {!loading && products.length > 0 && (
+        {products.length > 0 && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products.map((product: typeof products[number]) => (
@@ -92,7 +95,7 @@ export const ProductsPage = () => {
               ))}
             </div>
 
-            {hasMore && (
+            {hasMore && !searching && (
               <div className="flex justify-center mt-8">
                 <button
                   onClick={loadMore}

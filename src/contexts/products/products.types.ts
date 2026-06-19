@@ -1,8 +1,10 @@
+// src/contexts/products/products.types.ts
 import type { Product, ProductCategory } from '../../types'
 
 export interface ProductsState {
   products: Product[]
   loading: boolean
+  searching: boolean
   loadingMore: boolean
   hasMore: boolean
   error: string | null

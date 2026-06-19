@@ -8,6 +8,7 @@ import type { QueryDocumentSnapshot } from 'firebase/firestore'
 export const ProductsProvider = ({ children }: { children: React.ReactNode }) => {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [searching, setSearching] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -16,9 +17,13 @@ export const ProductsProvider = ({ children }: { children: React.ReactNode }) =>
 
   const lastDocRef = useRef<QueryDocumentSnapshot<Product> | null>(null)
 
-  const loadFirstPage = useCallback(async (category: ProductCategory | 'todas', search: string) => {
+  const loadFirstPage = useCallback(async (category: ProductCategory | 'todas', search: string, isSearch = false) => {
     try {
-      setLoading(true)
+      if (isSearch) {
+        setSearching(true)
+      } else {
+        setLoading(true)
+      }
       setError(null)
       lastDocRef.current = null
 
@@ -31,6 +36,7 @@ export const ProductsProvider = ({ children }: { children: React.ReactNode }) =>
       setError('Error al cargar los productos')
     } finally {
       setLoading(false)
+      setSearching(false)
     }
   }, [])
 
@@ -69,8 +75,8 @@ export const ProductsProvider = ({ children }: { children: React.ReactNode }) =>
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadFirstPage(selectedCategory, searchQuery)
-    }, 700)
+      loadFirstPage(selectedCategory, searchQuery, true)
+    }, 300)
 
     return () => clearTimeout(timer)
   }, [searchQuery])
@@ -79,6 +85,7 @@ export const ProductsProvider = ({ children }: { children: React.ReactNode }) =>
     () => ({
       products,
       loading,
+      searching,
       loadingMore,
       hasMore,
       error,
@@ -89,7 +96,7 @@ export const ProductsProvider = ({ children }: { children: React.ReactNode }) =>
       refetchProducts,
       loadMore,
     }),
-    [products, loading, loadingMore, hasMore, error, selectedCategory, searchQuery, refetchProducts, loadMore]
+    [products, loading, searching, loadingMore, hasMore, error, selectedCategory, searchQuery, refetchProducts, loadMore]
   )
 
   return (
