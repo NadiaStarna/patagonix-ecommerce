@@ -1,3 +1,4 @@
+// src/services/converters/orderConverter.ts
 import type {
   FirestoreDataConverter,
   QueryDocumentSnapshot,
@@ -14,6 +15,8 @@ export const orderConverter: FirestoreDataConverter<Order> = {
       items: order.items,
       total: order.total,
       status: order.status,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt,
     }
   },
 
