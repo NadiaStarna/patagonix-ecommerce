@@ -1,3 +1,4 @@
+// src/pages/orders/OrderDetailPage.tsx
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getOrderById } from '../../services/orders.service'
@@ -42,7 +43,7 @@ export const OrderDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-16">
+      <div className="fixed inset-0 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-glacier border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -50,7 +51,7 @@ export const OrderDetailPage = () => {
 
   if (error || !order) {
     return (
-      <div className="text-center py-16 text-gray-400">
+      <div className="text-center py-16 text-gray-400 px-4">
         <p className="text-lg font-medium">{error ?? 'Orden no encontrada'}</p>
         <Link to={ROUTES.ORDERS} className="text-glacier text-sm hover:underline mt-2 inline-block">
           Volver a mis órdenes
@@ -60,7 +61,7 @@ export const OrderDetailPage = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto px-4 py-8">
       <Link to={ROUTES.ORDERS} className="text-glacier text-sm hover:underline mb-4 inline-block">
         ← Volver a mis órdenes
       </Link>
@@ -88,14 +89,14 @@ export const OrderDetailPage = () => {
               <img
                 src={item.imageUrl}
                 alt={item.name}
-                className="w-16 h-16 object-cover rounded-lg"
+                className="w-16 h-16 object-cover rounded-lg shrink-0"
               />
-              <div className="flex-1">
-                <p className="font-medium text-stone text-sm">{item.name}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-stone text-sm truncate">{item.name}</p>
                 <p className="text-xs text-gray-400">{item.category}</p>
                 <p className="text-xs text-gray-500">Cantidad: {item.quantity}</p>
               </div>
-              <p className="font-medium text-sunset text-sm">
+              <p className="font-medium text-sunset text-sm shrink-0">
                 ${(item.unitPrice * item.quantity).toLocaleString('es-AR')}
               </p>
             </Link>

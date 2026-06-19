@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useFavorites } from '../../contexts/favorites'
 import { getProductById } from '../../services/products.service'
 import { ProductCard } from '../../components/common/ProductCard'
 import { LoadingState } from '../../components/common/LoadingState'
 import { EmptyState } from '../../components/common/EmptyState'
 import type { Product } from '../../types'
+import { ROUTES } from '../../routes/routes'
 
 export const FavoritesPage = () => {
   const { favoriteIds, loading: favoritesLoading } = useFavorites()
@@ -41,6 +43,13 @@ export const FavoritesPage = () => {
           title="Todavía no tenés favoritos"
           description="Marcá productos con el corazón para encontrarlos rápido."
         />
+        <Link
+          to={ROUTES.PRODUCTS}
+          state={{ scrollToCatalog: true }}
+          className="mt-2 bg-stone text-white px-6 py-2 rounded-lg text-sm hover:bg-opacity-90 transition md:hidden"
+        >
+          Ver productos
+        </Link>
       </div>
     )
   }
