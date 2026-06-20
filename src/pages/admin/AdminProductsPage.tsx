@@ -34,7 +34,7 @@ export const AdminProductsPage = () => {
       setProducts(prev => prev.filter(p => p.id !== id))
     } catch (err: any) {
       if (err?.code === 'permission-denied') {
-        alert('No tenés permisos para eliminar productos. Reintentá loguearte o consultá al administrador.')
+        alert('No tenés permisos para eliminar productos.')
       } else {
         alert('Error al eliminar el producto. Intentá de nuevo.')
       }
@@ -81,8 +81,8 @@ export const AdminProductsPage = () => {
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-2xl shadow-sm overflow-x-auto">
+          <table className="w-full text-sm min-w-[600px]">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
               <tr>
                 <th className="px-6 py-3 text-left">Producto</th>
