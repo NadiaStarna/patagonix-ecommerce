@@ -100,7 +100,11 @@ export const OrdersPage = () => {
         <div className="min-h-[60vh] flex flex-col items-center justify-center text-center text-gray-400 px-4">
           <p className="text-4xl mb-3">📦</p>
           <p className="text-lg font-medium">Todavía no tenés órdenes</p>
-          <Link to={ROUTES.PRODUCTS} className="mt-4 inline-block bg-stone text-white px-6 py-2 rounded-lg text-sm">
+          <Link
+            to={ROUTES.PRODUCTS}
+            state={{ scrollToCatalog: true }}
+            className="mt-4 inline-block bg-stone text-white px-6 py-2 rounded-lg text-sm"
+          >
             Ir al catálogo
           </Link>
         </div>
@@ -132,6 +136,15 @@ export const OrdersPage = () => {
               </div>
             </Link>
           ))}
+
+          {/* Volver al catálogo — solo mobile */}
+          <Link
+            to={ROUTES.PRODUCTS}
+            state={{ scrollToCatalog: true }}
+            className="md:hidden block text-center text-sm text-gray-500 hover:text-stone transition mt-2"
+          >
+            ← Ir al catálogo
+          </Link>
         </div>
       )}
     </div>
