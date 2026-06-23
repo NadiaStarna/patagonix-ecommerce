@@ -39,187 +39,89 @@ La aplicación soporta dos tipos de usuarios:
 
 ## 🏗️ Decisiones arquitectónicas
 
-### Estructura por capas técnicas
-
-Se eligió organizar el proyecto por capas técnicas en lugar de por features:
+### Estructura de carpetas por capas técnicas
 src/
 
-├── components/     → componentes reutilizables (ui, layout, common)
+├── components/     # Componentes reutilizables (common/ y layout/)
 
-├── pages/          → vistas completas organizadas por dominio
+├── contexts/       # Estado global: auth, cart, favorites, products, toast
 
-├── contexts/       → estado global (auth, cart, products, favorites)
+├── layouts/        # MainLayout y AdminLayout
 
-├── hooks/          → custom hooks
+├── pages/          # Páginas por dominio (admin, auth, cart, checkout, etc.)
 
-├── services/       → comunicación con Firebase, AWS y APIs
+├── routes/         # AppRouter, ProtectedRoute y constantes de rutas
 
-├── routes/         → configuración de navegación
+├── services/       # Comunicación con Firebase y AWS (única capa que habla con externos)
 
-├── layouts/        → estructuras visuales (MainLayout, AdminLayout)
+│   └── converters/ # FirestoreDataConverter para tipado completo
 
-└── types/          → interfaces TypeScript del dominio
+├── test/           # Utilidades de testing: fixtures, mocks, helpers
 
-**¿Por qué esta estructura?** Es más simple de entender para un proyecto de aprendizaje, facilita ubicar rápidamente cada responsabilidad y permite explicar el propósito del proyecto con solo mirar la estructura de carpetas.
+├── types/          # Interfaces TypeScript de todas las entidades del negocio
+
+└── utils/          # Utilidades: mensajes de error, seed de productos
+
+Se eligió estructura por capas técnicas sobre feature-based por claridad didáctica y alineación con la guía de la cátedra. Cada capa tiene una responsabilidad única: `services/` es la única capa que habla con Firebase y AWS, `contexts/` maneja el estado global, `pages/` orquesta la UI.
 
 ### Context API + useReducer para el carrito
+El carrito usa `useReducer` en lugar de `useState` porque maneja 5 acciones distintas con lógica interdependiente (`ADD_ITEM`, `REMOVE_ITEM`, `UPDATE_QUANTITY`, `CLEAR_CART`, `LOAD_FROM_STORAGE`). El reducer es una función pura — dado el mismo estado y la misma acción, siempre devuelve el mismo resultado — lo que lo hace predecible y fácil de testear de forma aislada sin renderizar componentes.
 
-El carrito de compras usa `useReducer` en lugar de `useState` porque maneja múltiples acciones (agregar, eliminar, actualizar cantidad, limpiar) que requieren lógica centralizada y predecible. El reducer es una función pura, lo que lo hace fácil de testear de forma aislada. Además, persiste su estado en `localStorage` mediante inicialización lazy de `useReducer`, de modo que el carrito sobrevive a una recarga de página.
+### Contextos separados por responsabilidad
+- `AuthContext` — identidad del usuario y rol
+- `CartContext` — carrito con useReducer y persistencia en localStorage
+- `FavoritesContext` — favoritos persistidos en Firestore
+- `ProductsContext` — catálogo con paginación, filtros y debounce
+- `ToastContext` — notificaciones globales
 
-### Context API para productos con paginación
+### Paginación con cursor de Firestore
+En lugar de paginación por offset, se implementó paginación con cursor usando `limit()` + `startAfter()`. El último documento de cada página se guarda como cursor en un `useRef` (sin disparar re-renders). Cuando el usuario hace click en "Cargar más", la siguiente query parte desde ese cursor. Esto es más eficiente porque Firestore no re-lee documentos anteriores.
 
-El catálogo de productos también vive en su propio Context (`ProductsContext`), siguiendo el mismo patrón que Auth y Cart, en lugar de un hook simple. Esto centraliza la lógica de fetching, filtrado por categoría y búsqueda por prefijo, evitando que distintos componentes disparen fetches duplicados. La carga de productos usa **paginación con cursor real** (`startAfter` + `limit` de Firestore) en lugar de traer todo el catálogo de una vez, y la búsqueda por nombre usa un campo derivado `nameLower` para permitir búsquedas por prefijo eficientes en Firestore.
+### Snapshot de items en órdenes
+Las órdenes guardan un snapshot completo de cada item (nombre, precio, imagen) al momento de la compra, no una referencia al producto. Esto garantiza que el historial de órdenes siempre muestre el precio y descripción correctos, incluso si el producto fue modificado o eliminado después.
 
-### Favoritos con persistencia en Firestore
+## 🔐 Flujo de autenticación y roles
 
-A diferencia del carrito (que persiste en `localStorage` porque tiene sentido incluso sin sesión), los favoritos requieren un usuario autenticado y persisten en Firestore en un documento `favorites/{uid}` con un array de IDs de producto. Esta diferencia de almacenamiento es intencional: favoritos solo tiene sentido asociado a una identidad, y guardarlo en Firestore permite que el usuario vea los mismos favoritos desde cualquier dispositivo. Las reglas de Firestore garantizan que cada usuario solo pueda leer y escribir su propio documento de favoritos.
+1. El usuario se registra con email/password o Google
+2. `AuthProvider` crea un documento en Firestore `users/{uid}` con `role: 'customer'`
+3. Al iniciar sesión, `onAuthStateChanged` lee ese documento para obtener el rol
+4. `ProtectedRoute` verifica autenticación y rol antes de mostrar cada página
+5. Para hacer a alguien admin: cambiar `role` a `'admin'` directamente en Firestore
 
-Auth, Cart, Products y Favorites están en **contextos separados** para mantener responsabilidades claras: cada uno maneja su propio dominio de estado.
+## 📦 Flujo de upload de imágenes a S3
 
-### AWS S3 con presigned URLs
+Las credenciales de AWS **nunca llegan al frontend**. El flujo es:
+Frontend → solicita presigned URL → Vercel Serverless Function
 
-Las imágenes de productos se almacenan en S3 en lugar de Firestore porque Firestore no está pensado para almacenar archivos binarios grandes. El upload se realiza mediante presigned URLs generadas por una Vercel Serverless Function, de modo que las credenciales de AWS nunca se exponen en el frontend. La función valida el `contentType` contra una lista blanca y genera nombres de archivo únicos con `randomUUID()`.
+Vercel Function → genera URL temporal firmada con credenciales AWS → devuelve al frontend
 
-### Seguridad en Firestore Rules
+Frontend → sube imagen directamente a S3 usando la presigned URL
 
-Las reglas de Firestore no solo validan el rol del usuario (`isAdmin()`), sino que además restringen qué campos específicos puede modificar un admin al actualizar una orden, usando `request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])`. Esto evita que una sesión comprometida o un error pueda alterar campos sensibles como el total o el dueño de la orden, incluso teniendo permisos de admin. De la misma forma, cada usuario solo puede leer y escribir su propio documento de favoritos.
+S3 → devuelve URL pública de la imagen → se guarda en Firestore
 
-## 📂 Estructura de carpetas completa
-patagonix-ecommerce/
+Una presigned URL es una URL temporal (5 minutos de expiración) que autoriza una operación específica (PUT de un archivo) sin compartir las credenciales de AWS. La Serverless Function vive en `api/get-presigned-url.ts`.
 
-├── api/
+## 🧪 Testing
 
-│   └── get-presigned-url.ts       → Serverless Function para S3
+41 tests distribuidos en:
 
-├── src/
+| Archivo | Tests | Qué cubre |
+|---|---|---|
+| `cartReducer.test.ts` | 10 | Cada acción del reducer |
+| `useCart.test.tsx` | 5 | Hook con renderHook |
+| `useAuth.test.tsx` | 5 | Hook con renderHook |
+| `ProductCard.test.tsx` | 6 | Componente reutilizable |
+| `CartPage.test.tsx` | 4 | Página con integración |
+| `CheckoutPage.test.tsx` | 1 | Prevención de doble submit |
+| `smoke.test.tsx` | 4 | Render sin errores |
+| `checkoutFlow.test.tsx` | 6 | Flujo de checkout |
 
-│   ├── components/
+Firebase está mockeado con `vi.mock()` — los tests no hacen llamadas reales. Se creó un wrapper `AllProviders` en `test-utils.tsx` que envuelve con todos los contexts necesarios.
 
-│   │   ├── common/                → ProductCard, LoadingState, EmptyState, ErrorState
+## ⚙️ Variables de entorno
 
-│   │   └── layout/                → Navbar
-
-│   ├── contexts/
-
-│   │   ├── auth/                  → AuthContext, AuthProvider, useAuth
-
-│   │   ├── cart/                  → CartContext, CartProvider, useCart, cartReducer
-
-│   │   ├── products/              → ProductsContext, ProductsProvider, useProducts
-
-│   │   ├── favorites/             → FavoritesContext, FavoritesProvider, useFavorites
-
-│   │   └── AppProviders.tsx
-
-│   ├── layouts/
-
-│   │   ├── MainLayout.tsx
-
-│   │   └── AdminLayout.tsx
-
-│   ├── pages/
-
-│   │   ├── auth/                  → LoginPage, RegisterPage
-
-│   │   ├── products/              → ProductsPage, ProductDetailPage
-
-│   │   ├── cart/                  → CartPage
-
-│   │   ├── favorites/             → FavoritesPage
-
-│   │   ├── checkout/              → CheckoutPage
-
-│   │   ├── orders/                → OrdersPage, OrderDetailPage
-
-│   │   └── admin/                 → AdminProductsPage, AdminOrdersPage, ProductFormPage
-
-│   ├── routes/
-
-│   │   ├── AppRouter.tsx
-
-│   │   ├── ProtectedRoute.tsx
-
-│   │   └── routes.ts
-
-│   ├── services/
-
-│   │   ├── firebase.ts
-
-│   │   ├── products.service.ts    → incluye paginación con cursor (getProductsPage)
-
-│   │   ├── orders.service.ts
-
-│   │   ├── favorites.service.ts
-
-│   │   ├── upload.service.ts
-
-│   │   └── converters/            → productConverter, orderConverter (FirestoreDataConverter)
-
-│   ├── utils/
-
-│   │   └── authErrors.ts          → mapeo de códigos de error de Firebase a mensajes en español
-
-│   ├── test/
-
-│   │   ├── setup.ts
-
-│   │   ├── test-utils.tsx
-
-│   │   └── mocks/firebase.ts
-
-│   └── types/                     → interfaces TypeScript del dominio
-
-├── .env.example
-
-├── vercel.json
-
-└── vite.config.ts
-
-## ⚙️ Instalación y configuración
-
-### 1. Clonar el repositorio
-
-```bash
-git clone https://github.com/NadiaStarna/patagonix-ecommerce.git
-cd patagonix-ecommerce
-```
-
-### 2. Instalar dependencias
-
-```bash
-npm install
-```
-
-### 3. Configurar variables de entorno
-
-Copiá `.env.example` a `.env` y completá los valores:
-
-```bash
-cp .env.example .env
-```
-
-#### Obtener credenciales de Firebase
-
-1. Entrá a [console.firebase.google.com](https://console.firebase.google.com)
-2. Creá un proyecto nuevo
-3. Activá **Authentication** (Email/Password y Google)
-4. Creá una base de datos **Firestore** en modo de prueba
-5. En **Configuración del proyecto → Tus aplicaciones**, registrá una app web
-6. Copiá los valores de `firebaseConfig` a las variables `VITE_FIREBASE_*`
-7. Creá los **índices compuestos** necesarios en Firestore (ver sección de índices más abajo)
-
-#### Configurar bucket de AWS S3
-
-1. Creá un bucket en S3 (región recomendada: `us-east-2`)
-2. Desactivá el bloqueo de acceso público
-3. Configurá CORS para permitir `PUT`, `POST`, `GET` desde cualquier origen
-4. Configurá una política de bucket que permita lectura pública (`s3:GetObject`)
-5. Creá un usuario IAM con permisos `AmazonS3FullAccess` y generá un Access Key
-
-### 4. Variables de entorno necesarias
-
+### `.env` (desarrollo local — no subir al repo)
 ```env
-# Firebase (frontend - prefijo VITE_ requerido)
 VITE_FIREBASE_API_KEY=
 VITE_FIREBASE_AUTH_DOMAIN=
 VITE_FIREBASE_PROJECT_ID=
@@ -227,94 +129,67 @@ VITE_FIREBASE_STORAGE_BUCKET=
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
 
-# AWS (solo backend - sin prefijo VITE_)
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_REGION=
 AWS_BUCKET_NAME=
 ```
 
-⚠️ **Importante**: las variables de AWS nunca llevan prefijo `VITE_` porque no deben ser accesibles desde el navegador.
+Las variables con prefijo `VITE_` son accesibles desde el frontend. Las variables de AWS **no llevan prefijo** porque solo se usan en las Vercel Serverless Functions — nunca llegan al navegador.
 
-### 5. Índices compuestos necesarios en Firestore
+## 🚀 Instalación y configuración
 
-El catálogo paginado y el historial de órdenes requieren los siguientes índices compuestos (Firebase los sugiere automáticamente con un link cuando una query los necesita y no existen):
+### 1. Clonar el repositorio
+```bash
+git clone https://github.com/NadiaStarna/patagonix-ecommerce.git
+cd patagonix-ecommerce
+```
 
-| Colección | Campos | Uso |
-|-----------|--------|-----|
-| `products` | `category` (Asc) + `createdAt` (Desc) | Filtro por categoría sin búsqueda |
-| `products` | `category` (Asc) + `nameLower` (Asc) | Filtro por categoría + búsqueda por nombre |
-| `orders` | `userId` (Asc) + `createdAt` (Desc) | Historial de órdenes del usuario |
+### 2. Instalar dependencias
+```bash
+npm install
+```
 
-### 6. Correr el proyecto
+### 3. Configurar Firebase
+1. Crear proyecto en [Firebase Console](https://console.firebase.google.com)
+2. Habilitar Authentication (Email/Password + Google)
+3. Crear base de datos Firestore
+4. Copiar credenciales del proyecto a `.env`
 
+### 4. Configurar AWS S3
+1. Crear bucket en AWS S3
+2. Configurar CORS en el bucket
+3. Crear usuario IAM con permisos de S3
+4. Copiar credenciales a `.env`
+
+### 5. Configurar variables de entorno en Vercel
+- Las variables `VITE_*` van en el entorno de producción
+- Las variables de AWS van como variables de entorno de las Serverless Functions
+
+### 6. Correr en desarrollo
 ```bash
 npm run dev
 ```
 
-## 📤 Flujo de upload de imágenes a S3
-
-1. El admin selecciona una imagen en el formulario de producto
-2. El frontend solicita una presigned URL a `/api/get-presigned-url` (Vercel Function), validando el `contentType` contra una lista blanca (`image/jpeg`, `image/png`, `image/webp`)
-3. La Function genera la URL usando las credenciales de AWS (almacenadas en el servidor) y un nombre de archivo único (`randomUUID()`)
-4. La Function devuelve la presigned URL + la URL pública final
-5. El frontend sube el archivo DIRECTAMENTE a S3 usando la presigned URL (PUT)
-6. El frontend guarda la URL pública del producto en Firestore
-
-Las credenciales de AWS (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) **solo existen en la Serverless Function** y nunca se exponen al navegador. La presigned URL expira a los 5 minutos y solo autoriza la subida de ese archivo específico.
-
-## ❤️ Favoritos
-
-Los usuarios autenticados pueden marcar productos como favoritos desde el ícono de corazón en cada `ProductCard`, y acceder a la lista completa desde el ícono de corazón en el header (`/favorites`). A diferencia del carrito, los favoritos requieren sesión activa y persisten en Firestore (`favorites/{uid}`) en lugar de `localStorage`, para que estén disponibles desde cualquier dispositivo donde el usuario inicie sesión.
-
-## 🧪 Testing
-
+### 7. Correr tests
 ```bash
 npm run test
 ```
 
-Suite de tests implementada (26 tests en total):
+## 🔏 Seguridad
 
-| Archivo | Qué testea |
-|---------|-----------|
-| `cartReducer.test.ts` | Función pura del reducer: acciones, edge cases e inmutabilidad (10 tests) |
-| `useCart.test.tsx` | Custom hook con renderHook (5 tests) |
-| `ProductCard.test.tsx` | Componente con providers, incluyendo Favorites (6 tests) |
-| `CartPage.test.tsx` | Flujo de integración del carrito (4 tests) |
-| `CheckoutPage.test.tsx` | Flujo crítico: previene doble submit / órdenes duplicadas (1 test) |
+- `.env` está en `.gitignore` — nunca se sube al repositorio
+- Las credenciales de AWS solo existen en las Vercel Serverless Functions
+- Las reglas de Firestore validan roles del lado del servidor
+- Las rutas protegidas validan rol tanto en el frontend (`ProtectedRoute`) como en Firestore
 
-Firebase está mockeado (`src/test/mocks/firebase.ts`) para que los tests sean deterministas y no dependan de servicios externos ni de la red. El service de órdenes se mockea directamente en el test de checkout para aislar la lógica de UI del acceso real a Firestore. El wrapper de test (`test-utils.tsx`) compone `AuthProvider`, `FavoritesProvider` y `CartProvider`, de modo que cualquier componente que dependa de esos contextos se testea con su entorno real.
+## 📊 Extra Credit
 
-## 🚀 Scripts disponibles
+✅ **Paginación de productos** — implementada con cursor de Firestore (`limit()` + `startAfter()`), cargando 8 productos por página.
 
-```bash
-npm run dev       # Servidor de desarrollo
-npm run build     # Build de producción
-npm run test      # Correr tests con Vitest
-npm run preview   # Preview del build de producción
-```
+## 🤖 Bitácora de uso de IA
 
-## 📦 Deploy
-
-El proyecto está desplegado en Vercel con integración continua desde GitHub. Cada push a `main` dispara un nuevo deploy automático.
-
-El archivo `vercel.json` configura un rewrite para que todas las rutas redirijan a `index.html`, permitiendo que React Router maneje la navegación de la SPA correctamente incluso al recargar rutas internas.
-
-```json
-{
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
-```
-
-## 🤖 Uso de IA en el desarrollo
-
-Durante el desarrollo se utilizó IA (Claude) como herramienta de apoyo para planificación de arquitectura, validación de decisiones técnicas, debugging y generación de tests.
-
-📄 **[Ver Documentación completa del Uso de la IA y Bitácora](./docs/uso-de-ia/README.md)**
-
-La documentación incluye entradas detalladas con el contexto, las consultas realizadas y las decisiones tomadas a partir de cada interacción, junto con capturas de pantalla del proceso.
+Ver [docs/uso-de-ia/README.md](./docs/uso-de-ia/README.md)
 
 ## 👤 Autora
 
