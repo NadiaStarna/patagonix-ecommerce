@@ -14,6 +14,13 @@ La aplicación soporta dos tipos de usuarios:
 
 **URL**: [https://patagonix-ecommerce.vercel.app](https://patagonix-ecommerce.vercel.app)
 
+## 🔑 Credenciales de prueba
+
+| Rol | Email | Contraseña |
+|-----|-------|------------|
+| Admin | test@test.com | 123456 |
+| Cliente | Registrarse normalmente desde la app | |
+
 ## 🛠️ Stack tecnológico
 
 ### Frontend
