@@ -8,8 +8,6 @@ export const FavoritesProvider = ({ children }: { children: React.ReactNode }) =
   const [favoriteIds, setFavoriteIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Cada vez que cambia el usuario (login/logout), recargamos sus favoritos.
-  // Si no hay usuario, dejamos la lista vacía: favoritos requiere sesión
   useEffect(() => {
     if (!user) {
       setFavoriteIds([])
@@ -31,8 +29,6 @@ export const FavoritesProvider = ({ children }: { children: React.ReactNode }) =
   const toggleFavorite = useCallback(async (productId: string) => {
     if (!user) return
 
-    // Actualizamos el estado local de forma optimista para que el ícono
-    // responda al instante, y recién después persistimos en Firestore
     const next = favoriteIds.includes(productId)
       ? favoriteIds.filter(id => id !== productId)
       : [...favoriteIds, productId]

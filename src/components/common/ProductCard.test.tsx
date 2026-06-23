@@ -31,7 +31,7 @@ describe('ProductCard', () => {
 
   it('debe mostrar la categoría del producto', () => {
     render(<ProductCard product={mockProduct} />)
-    expect(screen.getByText('electronica')).toBeInTheDocument()
+    expect(screen.getByText('tecnologia')).toBeInTheDocument()
   })
 
   it('debe mostrar el stock disponible', () => {

@@ -1,32 +1,29 @@
-import type { ReactElement } from 'react'
-import { render } from '@testing-library/react'
-import type { RenderOptions } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
-import { AuthProvider } from '../contexts/auth'
+// src/test/test-utils.tsx
+import { render, type RenderOptions } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { CartProvider } from '../contexts/cart'
+import { ToastProvider } from '../contexts/toast'
+import { AuthProvider } from '../contexts/auth'
 import { FavoritesProvider } from '../contexts/favorites'
 
-// Wrapper que provee todos los contextos necesarios para testear componentes
 const AllProviders = ({ children }: { children: React.ReactNode }) => {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <FavoritesProvider>
-          <CartProvider>
-            {children}
-          </CartProvider>
-        </FavoritesProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <MemoryRouter>
+      <ToastProvider>
+        <AuthProvider>
+          <FavoritesProvider>
+            <CartProvider>
+              {children}
+            </CartProvider>
+          </FavoritesProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </MemoryRouter>
   )
 }
 
-// Función personalizada de render que envuelve automáticamente con los providers
-const customRender = (
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-) => render(ui, { wrapper: AllProviders, ...options })
+const customRender = (ui: React.ReactElement, options?: RenderOptions) =>
+  render(ui, { wrapper: AllProviders, ...options })
 
-// Re-exportamos todo de testing-library para usar customRender en su lugar
 export * from '@testing-library/react'
 export { customRender as render }

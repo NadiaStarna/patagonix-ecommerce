@@ -57,7 +57,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   return (
     <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group border-t-4 border-sunset h-full flex flex-col">
 
-      {/* Imagen */}
       <div className="relative overflow-hidden h-48 shrink-0">
         <img
           src={product.imageUrl}
@@ -82,7 +81,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         )}
       </div>
 
-      {/* Info */}
       <div className="p-4 flex flex-col gap-2 flex-1">
         <Link to={productDetailRoute} className="contents">
           <h3 className="font-semibold text-stone text-sm truncate">{product.name}</h3>
@@ -96,7 +94,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </span>
         </Link>
 
-        {/* Botones, siempre al fondo de la card gracias a mt-auto */}
         <div className="mt-auto flex flex-col gap-2">
           <Link
             to={productDetailRoute}

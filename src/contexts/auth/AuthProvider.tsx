@@ -67,9 +67,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error: any) {
       const message = getAuthErrorMessage(error?.code ?? '')
       setState(prev => ({ ...prev, loading: false, error: message }))
-      // Relanzamos el error para que el formulario pueda reaccionar con
-      // su propio try/catch, en lugar de depender del estado del context
-      // (que se actualiza de forma asíncrona y puede no reflejarse a tiempo)
       throw new Error(message)
     }
   }, [])

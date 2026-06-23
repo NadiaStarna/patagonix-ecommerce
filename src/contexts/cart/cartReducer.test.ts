@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest'
 import { cartReducer, initialCartState } from './cartReducer'
 import type { Product } from '../../types'
 
-// Producto de prueba reutilizable
 const mockProduct: Product = {
   id: '1',
   name: 'Producto Test',
@@ -139,9 +138,6 @@ describe('cartReducer', () => {
     state = cartReducer(state, { type: 'ADD_ITEM', payload: product2 })
     state = cartReducer(state, { type: 'ADD_ITEM', payload: product2 })
 
-    // mockProduct: 1 x $100 = $100
-    // product2:    2 x $50  = $100
-    // total esperado: $200
     expect(state.total).toBe(200)
   })
 
@@ -154,9 +150,6 @@ describe('cartReducer', () => {
 
     const next = cartReducer(state, { type: 'ADD_ITEM', payload: mockProduct })
 
-    // El reducer siempre devuelve un objeto y un array nuevos en memoria,
-    // nunca modifica la referencia original — esto es lo que permite
-    // que React detecte el cambio y vuelva a renderizar
     expect(next).not.toBe(state)
     expect(next.items).not.toBe(originalItems)
     expect(state.items[0].quantity).toBe(1)
