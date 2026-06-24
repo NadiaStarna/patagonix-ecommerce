@@ -16,7 +16,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const productDetailRoute = ROUTES.PRODUCT_DETAIL.replace(':id', product.id)
   const { isFavorite, toggleFavorite } = useFavorites()
   const { user } = useAuth()
-  const { addItem } = useCart()
+  const { addItem } = useCart()     //
   const { showToast } = useToast()
   const navigate = useNavigate()
 
@@ -37,7 +37,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     setQuantity(q => Math.min(product.stock, Math.max(1, q + delta)))
   }
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = (e: React.MouseEvent) => {  //
     e.preventDefault()
     e.stopPropagation()
     if (!user) {
@@ -61,8 +61,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <img
           src={product.imageUrl}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
         <span className="absolute top-2 left-2 bg-stone text-white text-xs px-2 py-1 rounded-full">
           {product.category}
         </span>
@@ -71,8 +70,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <button
             onClick={handleToggleFavorite}
             aria-label={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-            className="absolute top-2 right-2 w-8 h-8 bg-stone rounded-full shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
-          >
+            className="absolute top-2 right-2 w-8 h-8 bg-stone rounded-full shadow-sm flex items-center justify-center hover:scale-110 transition-transform">
             <Heart
               size={16}
               className={favorite ? 'text-sunset fill-sunset' : 'text-white'}
@@ -97,8 +95,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         <div className="mt-auto flex flex-col gap-2">
           <Link
             to={productDetailRoute}
-            className="block text-center bg-stone text-white text-sm py-2 rounded-lg hover:bg-opacity-90 transition"
-          >
+            className="block text-center bg-stone text-white text-sm py-2 rounded-lg hover:bg-opacity-90 transition">
             Ver detalle
           </Link>
 
@@ -106,22 +103,19 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleAddToCart}
-                className="flex-1 bg-glacier text-white text-sm py-2 rounded-lg hover:bg-opacity-90 active:scale-95 active:bg-stone transition"
-              >
+                className="flex-1 bg-glacier text-white text-sm py-2 rounded-lg hover:bg-opacity-90 active:scale-95 active:bg-stone transition">
                 Agregar
               </button>
               <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden shrink-0">
                 <button
                   onClick={e => handleQuantityChange(e, -1)}
-                  className="px-2 py-2 bg-gray-100 hover:bg-gray-200 transition text-sm"
-                >
+                  className="px-2 py-2 bg-gray-100 hover:bg-gray-200 transition text-sm">
                   −
                 </button>
                 <span className="px-3 py-2 text-xs font-medium">{quantity}</span>
                 <button
                   onClick={e => handleQuantityChange(e, 1)}
-                  className="px-2 py-2 bg-gray-100 hover:bg-gray-200 transition text-sm"
-                >
+                  className="px-2 py-2 bg-gray-100 hover:bg-gray-200 transition text-sm">
                   +
                 </button>
               </div>

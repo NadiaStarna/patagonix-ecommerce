@@ -13,7 +13,5 @@ export const getAuthErrorMessage = (code: string): string => {
       'Ya existe una cuenta con ese email usando otro método de login.',
   }
 
-  // Si el código no está mapeado, mostramos un mensaje genérico
-  // en lugar de exponer el código técnico al usuario
   return messages[code] ?? 'Ocurrió un error inesperado. Intentá de nuevo.'
 }

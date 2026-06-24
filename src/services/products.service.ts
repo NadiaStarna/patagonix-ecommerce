@@ -1,4 +1,3 @@
-// src/services/products.service.ts
 import { 
   collection, 
   getDocs, 
@@ -59,7 +58,7 @@ export const getProductsPage = async (params: GetProductsParams = {}): Promise<G
     constraints.push(startAfter(cursor))
   }
 
-  constraints.push(limit(PAGE_SIZE))
+  constraints.push(limit(PAGE_SIZE))  //PAGE_SIZE = 8
 
   const q = query(productsRef, ...constraints)
   const snapshot = await getDocs(q)
