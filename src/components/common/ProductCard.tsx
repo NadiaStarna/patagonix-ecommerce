@@ -103,7 +103,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleAddToCart}
-                className="flex-1 bg-glacier text-white text-sm py-2 rounded-lg hover:bg-opacity-90 active:scale-95 active:bg-stone transition">
+                className="flex-1 bg-gradient-to-r from-[#4A2E4A] to-[#B05A3A] text-white text-sm py-2 rounded-lg hover:brightness-110 active:scale-95 transition">
                 Agregar
               </button>
               <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden shrink-0">
