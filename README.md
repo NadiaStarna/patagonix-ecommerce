@@ -87,6 +87,16 @@ En lugar de paginación por offset, se implementó paginación con cursor usando
 ### Snapshot de items en órdenes
 Las órdenes guardan un snapshot completo de cada item (nombre, precio, imagen) al momento de la compra, no una referencia al producto. Esto garantiza que el historial de órdenes siempre muestre el precio y descripción correctos, incluso si el producto fue modificado o eliminado después.
 
+## 🎨 Identidad visual
+
+La paleta de la app se construye sobre un degradé de marca (violeta atardecer → naranja arcilla → grafito), inspirado en la luz del amanecer sobre la cordillera patagónica. Este degradé se repite de forma consistente en:
+
+- El fondo del **Hero** de la home, superpuesto sobre una fotografía real de montaña (banco de imágenes libre, Unsplash) con animación de estrellas titilando.
+- Las pantallas de **Login y Register**, con un tratamiento *glassmorphism* (tarjeta semi-transparente con `backdrop-blur`) sobre la misma fotografía.
+- Acentos puntuales, como el botón "Agregar al carrito" en las tarjetas de producto, que usa un degradé con los mismos dos colores extremos del Hero para mantener coherencia visual en toda la app.
+
+Esta decisión busca que la identidad de marca no viva solo en el logo, sino que se sienta en cada punto de contacto — login, home y catálogo — sin depender de una sola paleta plana de colores sólidos.
+
 ## 🔐 Flujo de autenticación y roles
 
 1. El usuario se registra con email/password o Google
@@ -200,4 +210,4 @@ Ver [docs/uso-de-ia/README.md](./docs/uso-de-ia/README.md)
 
 ## 👤 Autora
 
-Nadia Starna - Proyecto Integrador Módulo 5 - Henry
+Nadia Starna - 
