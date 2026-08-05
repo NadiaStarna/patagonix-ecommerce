@@ -15,6 +15,8 @@ const mockProduct: Product = {
   stock: 10,
   category: 'tecnologia',
   imageUrl: 'https://placehold.co/400',
+  images: [],
+  colors: [],
   createdAt: new Date(),
   featured: false,
   updatedAt: new Date(),
