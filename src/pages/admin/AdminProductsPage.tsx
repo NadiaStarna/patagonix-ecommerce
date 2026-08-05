@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { getProducts, deleteProduct } from '../../services/products.service'
+import { seedProducts, removeDuplicateProducts } from '../../utils/seedProducts'
+import { X, ArrowLeft } from 'lucide-react'
 import type { Product } from '../../types'
 import { ROUTES } from '../../routes/routes'
 
 export const AdminProductsPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const query = searchParams.get('q')?.trim().toLowerCase() ?? ''
+  const categoryFilter = searchParams.get('category') ?? ''
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [seeding, setSeeding] = useState(false)
+  const [cleaning, setCleaning] = useState(false)
 
   const fetchProducts = async () => {
     try {
@@ -25,6 +32,12 @@ export const AdminProductsPage = () => {
   useEffect(() => {
     fetchProducts()
   }, [])
+
+  const visibleProducts = products
+    .filter(p => !query || p.nameLower.includes(query))
+    .filter(p => !categoryFilter || p.category === categoryFilter)
+
+  const clearSearch = () => setSearchParams({})
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`¿Estás segura de eliminar "${name}"?`)) return
@@ -43,6 +56,39 @@ export const AdminProductsPage = () => {
     }
   }
 
+  // Botón temporal, solo para cargar los 12 productos de ejemplo una vez.
+  // Podés borrar este botón (y este handler) del código después de usarlo.
+  const handleSeed = async () => {
+    if (!confirm('Esto va a crear los productos de ejemplo que todavía no existan en Firestore. ¿Continuar?')) return
+    setSeeding(true)
+    try {
+      const { created, skipped } = await seedProducts()
+      await fetchProducts()
+      alert(`Listo: se crearon ${created} productos nuevos. ${skipped} ya existían y se saltearon.`)
+    } catch (err) {
+      alert('Error al cargar los productos de ejemplo. Revisá la consola.')
+    } finally {
+      setSeeding(false)
+    }
+  }
+
+  // Botón temporal, solo para limpiar los duplicados que se generaron por el
+  // problema de firebase.ts. Sacalo del código (este handler y el botón) una
+  // vez que confirmes que no quedan duplicados.
+  const handleRemoveDuplicates = async () => {
+    if (!confirm('Esto va a borrar productos duplicados (mismo nombre), dejando solo el más antiguo de cada uno. ¿Continuar?')) return
+    setCleaning(true)
+    try {
+      const { removed } = await removeDuplicateProducts()
+      await fetchProducts()
+      alert(`Listo: se borraron ${removed} productos duplicados.`)
+    } catch (err) {
+      alert('Error al limpiar duplicados. Revisá la consola.')
+    } finally {
+      setCleaning(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -53,14 +99,59 @@ export const AdminProductsPage = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-stone">Productos</h1>
-        <Link
-          to={ROUTES.ADMIN_PRODUCT_NEW}
-          className="bg-stone text-white px-4 py-2 rounded-lg text-sm hover:bg-opacity-90 transition"
-        >
-          + Nuevo producto
-        </Link>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {categoryFilter && (
+            <Link
+              to={ROUTES.ADMIN_CATEGORIES}
+              className="flex items-center gap-1.5 text-sm text-gray-500 border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+            >
+              <ArrowLeft size={15} />
+              Categorías
+            </Link>
+          )}
+          <h1 className="text-2xl font-bold text-stone">Productos</h1>
+          {query && (
+            <button
+              onClick={clearSearch}
+              className="flex items-center gap-1.5 text-xs bg-fog text-stone px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors"
+            >
+              Búsqueda: "{query}"
+              <X size={12} />
+            </button>
+          )}
+          {categoryFilter && (
+            <button
+              onClick={clearSearch}
+              className="flex items-center gap-1.5 text-xs bg-fog text-stone px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors"
+            >
+              Categoría: {categoryFilter}
+              <X size={12} />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRemoveDuplicates}
+            disabled={cleaning}
+            className="border border-red-300 text-red-500 px-4 py-2 rounded-lg text-sm hover:bg-red-50 transition disabled:opacity-50"
+          >
+            {cleaning ? 'Limpiando...' : 'Borrar duplicados'}
+          </button>
+          <button
+            onClick={handleSeed}
+            disabled={seeding}
+            className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition disabled:opacity-50"
+          >
+            {seeding ? 'Cargando...' : 'Cargar productos de ejemplo'}
+          </button>
+          <Link
+            to={ROUTES.ADMIN_PRODUCT_NEW}
+            className="bg-stone text-white px-4 py-2 rounded-lg text-sm hover:bg-opacity-90 transition"
+          >
+            + Nuevo producto
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -69,21 +160,34 @@ export const AdminProductsPage = () => {
         </div>
       )}
 
-      {products.length === 0 ? (
+      {visibleProducts.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <p className="text-4xl mb-3">📦</p>
-          <p className="text-lg font-medium">No hay productos todavía</p>
-          <Link
-            to={ROUTES.ADMIN_PRODUCT_NEW}
-            className="mt-4 inline-block bg-stone text-white px-6 py-2 rounded-lg text-sm"
-          >
-            Crear primer producto
-          </Link>
+          {query || categoryFilter ? (
+            <>
+              <p className="text-lg font-medium">
+                {query ? `No hay productos que coincidan con "${query}"` : `No hay productos en "${categoryFilter}"`}
+              </p>
+              <button onClick={clearSearch} className="mt-4 text-glacier hover:underline text-sm">
+                Limpiar filtro
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-medium">No hay productos todavía</p>
+              <Link
+                to={ROUTES.ADMIN_PRODUCT_NEW}
+                className="mt-4 inline-block bg-stone text-white px-6 py-2 rounded-lg text-sm"
+              >
+                Crear primer producto
+              </Link>
+            </>
+          )}
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm overflow-x-auto">
+        <div className="bg-white rounded-2xl shadow-sm overflow-x-auto overflow-y-auto max-h-[600px]">
           <table className="w-full text-sm min-w-[600px]">
-            <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+            <thead className="bg-gray-50 text-gray-500 text-xs uppercase sticky top-0">
               <tr>
                 <th className="px-6 py-3 text-left">Producto</th>
                 <th className="px-6 py-3 text-left">Categoría</th>
@@ -93,7 +197,7 @@ export const AdminProductsPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {products.map(product => {
+              {visibleProducts.map(product => {
                 const isDeleting = deletingId === product.id
                 return (
                   <tr key={product.id} className="hover:bg-gray-50 transition">

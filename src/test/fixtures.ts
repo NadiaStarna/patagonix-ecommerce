@@ -9,6 +9,7 @@ export const mockProduct: Product = {
   stock: 10,
   category: 'trekking',
   imageUrl: 'https://placehold.co/400x300?text=Mochila',
+  featured: false,
   createdAt: new Date('2026-06-01'),
   updatedAt: new Date('2026-06-01'),
 }

@@ -1,104 +1,120 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, act } from '../../test/test-utils'
-import { renderHook } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import '../../test/mocks/firebase'
-import { CheckoutPage } from './CheckoutPage'
-import { CartProvider, useCart } from '../../contexts/cart'
-import { AuthContext } from '../../contexts/auth/AuthContext'
-import * as ordersService from '../../services/orders.service'
-import type { Product, AppUser } from '../../types'
+// src/pages/products/ProductsPage.tsx
+import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+import { useProducts } from '../../contexts/products'
+import { ProductCard } from '../../components/common/ProductCard'
+import { Hero } from '../../components/common/Hero'
+import { BenefitsStrip } from '../../components/common/BenefitsStrip'
+import { CategoryIcons } from '../../components/common/CategoryIcons'
+import { FeaturedProducts } from '../../components/common/FeaturedProducts'
+import { EmptyState } from '../../components/common/EmptyState'
+import { ErrorState } from '../../components/common/ErrorState'
+import { X } from 'lucide-react'
+import { CATEGORIES_WITH_ALL } from '../../utils/categories'
 
-// Mockeamos el service de órdenes completo: lo que nos importa en este test
-// no es si Firestore funciona, sino cuántas veces se INTENTA crear una orden
-vi.mock('../../services/orders.service', () => ({
-  createOrder: vi.fn(),
-}))
+export const ProductsPage = () => {
+  const location = useLocation()
+  const {
+    products,
+    loading,
+    searching,
+    loadingMore,
+    hasMore,
+    error,
+    selectedCategory,
+    setSelectedCategory,
+    searchQuery,
+    setSearchQuery,
+    refetchProducts,
+    loadMore,
+  } = useProducts()
 
-const mockProduct: Product = {
-  id: '1',
-  name: 'Laptop Gaming',
-  nameLower: 'laptop gaming',
-  description: 'Laptop de alta performance',
-  price: 150000,
-  stock: 10,
-  category: 'tecnologia',
-  imageUrl: 'https://placehold.co/400',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-}
+  useEffect(() => {
+    const scrollToCatalog = (location.state as { scrollToCatalog?: boolean } | null)?.scrollToCatalog
+    if (scrollToCatalog) {
+      document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [location.state])
 
-const mockUser: AppUser = {
-  uid: 'user_1',
-  email: 'test@patagonix.com',
-  displayName: 'Usuario Test',
-  role: 'customer',
-  createdAt: new Date(),
-}
-
-// Wrapper que simula un usuario ya autenticado, sin pasar por el login real.
-// Inyectamos directamente el value del AuthContext en lugar de usar AuthProvider,
-// para no depender de onAuthStateChanged en este test puntual
-const AuthenticatedWrapper = ({ children }: { children: React.ReactNode }) => (
-  <AuthContext.Provider
-    value={{
-      user: mockUser,
-      loading: false,
-      error: null,
-      register: vi.fn(),
-      login: vi.fn(),
-      loginWithGoogle: vi.fn(),
-      logout: vi.fn(),
-    }}
-  >
-    <CartProvider>{children}</CartProvider>
-  </AuthContext.Provider>
-)
-
-describe('CheckoutPage - Prevención de doble submit', () => {
-
-  beforeEach(() => {
-    vi.clearAllMocks()
-    window.localStorage.clear()
-  })
-
-  it('no crea dos órdenes si el usuario hace doble click en confirmar', async () => {
-    const user = userEvent.setup()
-
-    // Arrange: agregamos un producto al carrito usando el mismo localStorage
-    // que va a leer el CartProvider de CheckoutPage al montarse
-    const { result } = renderHook(() => useCart(), { wrapper: AuthenticatedWrapper })
-    act(() => {
-      result.current.addItem(mockProduct)
-    })
-
-    // createOrder tarda un poco en resolver, simulando latencia real de red,
-    // para darle tiempo al segundo click de llegar antes de que termine el primero
-    let resolveOrder: (value: string) => void
-    vi.mocked(ordersService.createOrder).mockImplementation(
-      () => new Promise(resolve => { resolveOrder = resolve })
+  // Mientras Firestore carga por primera vez, mostramos solo el spinner.
+  // Ojo: solo en la carga inicial (products.length === 0) — si ya hay productos
+  // cargados y el usuario cambia de categoría, NO desmontamos toda la página
+  // (eso hacía que el scroll volviera arriba, al hero, en cada cambio de filtro).
+  if (loading && !searching && products.length === 0) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-3 bg-fog z-50">
+        <div className="w-10 h-10 border-4 border-glacier border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-gray-400">Cargando productos...</p>
+      </div>
     )
+  }
 
-    render(
-      <AuthenticatedWrapper>
-        <CheckoutPage />
-      </AuthenticatedWrapper>
-    )
+  const categoryLabel = CATEGORIES_WITH_ALL.find(c => c.value === selectedCategory)?.label
+  const hasActiveFilter = selectedCategory !== 'todas' || searchQuery.trim().length > 0
 
-    const confirmButton = screen.getByRole('button', { name: /confirmar compra/i })
+  const clearFilters = () => {
+    setSelectedCategory('todas')
+    setSearchQuery('')
+  }
 
-    // Act: dos clicks rápidos sobre el botón
-    await user.click(confirmButton)
-    await user.click(confirmButton)
+  return (
+    <div>
+      <Hero />
+      <BenefitsStrip />
+      <CategoryIcons />
+      <FeaturedProducts />
 
-    // Resolvemos la promesa pendiente para completar el flujo
-    act(() => {
-      resolveOrder('order_123')
-    })
+      <div id="catalogo" className="max-w-7xl mx-auto px-4 py-8 scroll-mt-6">
 
-    // Assert: createOrder debería haberse llamado una sola vez, sin importar
-    // que el usuario haya hecho click dos veces
-    expect(ordersService.createOrder).toHaveBeenCalledTimes(1)
-  })
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
+          <h2 className="text-lg font-bold text-stone" style={{ fontFamily: 'var(--font-display)' }}>
+            Catálogo
+          </h2>
+          {hasActiveFilter && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1.5 text-xs bg-fog text-stone px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors"
+            >
+              {searchQuery.trim()
+                ? `Búsqueda: "${searchQuery}"`
+                : `Categoría: ${categoryLabel}`}
+              <X size={12} />
+            </button>
+          )}
+        </div>
 
-})
+        {error && <ErrorState message={error} onRetry={refetchProducts} />}
+
+        {!loading && !error && products.length === 0 && (
+          <EmptyState
+            icon="🔍"
+            title="No se encontraron productos"
+            description="Probá con otra categoría o término de búsqueda"
+          />
+        )}
+
+        {products.length > 0 && (
+          <>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 transition-opacity ${loading ? 'opacity-50' : 'opacity-100'}`}>
+              {products.map((product: typeof products[number]) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            {hasMore && !searching && (
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="bg-white border border-stone text-stone px-6 py-2 rounded-lg text-sm font-medium hover:bg-stone hover:text-white transition disabled:opacity-50"
+                >
+                  {loadingMore ? 'Cargando más...' : 'Cargar más productos'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}

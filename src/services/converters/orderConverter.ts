@@ -11,6 +11,7 @@ import type { Order, OrderStatus } from '../../types'
 export const orderConverter: FirestoreDataConverter<Order> = {
   toFirestore(order: WithFieldValue<Order>): DocumentData {
     return {
+      orderNumber: order.orderNumber,
       userId: order.userId,
       items: order.items,
       total: order.total,
@@ -34,6 +35,8 @@ export const orderConverter: FirestoreDataConverter<Order> = {
 
     return {
       id: snapshot.id,
+      // Fallback para órdenes creadas antes de que existiera este campo
+      orderNumber: typeof data.orderNumber === 'number' ? data.orderNumber : 0,
       userId: data.userId,
       items: data.items,
       total: data.total,

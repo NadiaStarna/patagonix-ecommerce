@@ -5,18 +5,21 @@ import { CartProvider } from '../contexts/cart'
 import { ToastProvider } from '../contexts/toast'
 import { AuthProvider } from '../contexts/auth'
 import { FavoritesProvider } from '../contexts/favorites'
+import { SettingsProvider } from '../contexts/settings'
 
 const AllProviders = ({ children }: { children: React.ReactNode }) => {
   return (
     <MemoryRouter>
       <ToastProvider>
-        <AuthProvider>
-          <FavoritesProvider>
-            <CartProvider>
-              {children}
-            </CartProvider>
-          </FavoritesProvider>
-        </AuthProvider>
+        <SettingsProvider>
+          <AuthProvider>
+            <FavoritesProvider>
+              <CartProvider>
+                {children}
+              </CartProvider>
+            </FavoritesProvider>
+          </AuthProvider>
+        </SettingsProvider>
       </ToastProvider>
     </MemoryRouter>
   )

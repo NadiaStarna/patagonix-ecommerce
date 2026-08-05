@@ -17,6 +17,7 @@ export interface OrderItem {
 
 export interface Order {
   id: string
+  orderNumber: number
   userId: string
   items: OrderItem[]
   total: number
@@ -25,4 +26,4 @@ export interface Order {
   updatedAt: Date
 }
 
-export type CreateOrderDTO = Omit<Order, 'id' | 'createdAt' | 'updatedAt'>
+export type CreateOrderDTO = Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'updatedAt'>

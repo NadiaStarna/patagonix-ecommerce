@@ -3,6 +3,7 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   REGISTER: '/register',
+  ABOUT: '/sobre-patagonix',
 
   // Rutas de cliente (requieren sesión)
   PRODUCTS: '/products',
@@ -19,4 +20,8 @@ export const ROUTES = {
   ADMIN_PRODUCT_NEW: '/admin/products/new',
   ADMIN_PRODUCT_EDIT: '/admin/products/:id/edit',
   ADMIN_ORDERS: '/admin/orders',
+  ADMIN_CATEGORIES: '/admin/categories',
+  ADMIN_USERS: '/admin/users',
+  ADMIN_INVENTORY: '/admin/inventory',
+  ADMIN_SETTINGS: '/admin/settings',
 } as const

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createProduct, updateProduct, getProductById } from '../../services/products.service'
 import { uploadImageToS3 } from '../../services/upload.service'
+import { ArrowLeft } from 'lucide-react'
 import type { ProductCategory } from '../../types'
 import { ROUTES } from '../../routes/routes'
 
@@ -40,6 +41,7 @@ export const ProductFormPage = () => {
     stock: '',
     category: 'trekking' as ProductCategory,
     imageUrl: '',
+    featured: false,
   })
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export const ProductFormPage = () => {
           stock: product.stock.toString(),
           category: product.category,
           imageUrl: product.imageUrl,
+          featured: product.featured,
         })
         setImagePreview(product.imageUrl)
       } catch (err) {
@@ -131,12 +134,14 @@ export const ProductFormPage = () => {
 
     try {
       let imageUrl = form.imageUrl
+      let imageUploadFailed = false
 
       if (imageFile) {
         try {
           imageUrl = await uploadImageToS3(imageFile)
         } catch (err) {
-          imageUrl = `https://placehold.co/400x300?text=${encodeURIComponent(form.name)}`
+          imageUploadFailed = true
+          imageUrl = imageUrl || `https://placehold.co/400x300?text=${encodeURIComponent(form.name)}`
         }
       }
 
@@ -151,12 +156,19 @@ export const ProductFormPage = () => {
         stock: Number(form.stock),
         category: form.category,
         imageUrl,
+        featured: form.featured,
       }
 
       if (isEditing) {
         await updateProduct(id, productData)
       } else {
         await createProduct(productData)
+      }
+
+      if (imageUploadFailed) {
+        alert(
+          'El producto se guardó, pero la foto NO se pudo subir a S3 (la función de subida solo funciona con el sitio deployado en Vercel, no con "npm run dev" local). Se mantuvo la imagen anterior. Probá subir la foto una vez que el sitio esté deployado.'
+        )
       }
 
       setStatus('success')
@@ -183,9 +195,18 @@ export const ProductFormPage = () => {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-stone mb-6">
-        {isEditing ? 'Editar producto' : 'Nuevo producto'}
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-stone">
+          {isEditing ? 'Editar producto' : 'Nuevo producto'}
+        </h1>
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-sm text-gray-500 border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+        >
+          <ArrowLeft size={15} />
+          Atrás
+        </button>
+      </div>
 
       {globalError && (
         <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
@@ -279,6 +300,19 @@ export const ProductFormPage = () => {
               <option key={cat.value} value={cat.value}>{cat.label}</option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={form.featured}
+              onChange={e => setForm(prev => ({ ...prev, featured: e.target.checked }))}
+              disabled={isSubmitting}
+              className="w-4 h-4 accent-sunset"
+            />
+            Mostrar en "Productos destacados" del home
+          </label>
         </div>
 
         <div>

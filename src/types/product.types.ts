@@ -14,6 +14,7 @@ export interface Product {
   stock: number
   category: ProductCategory
   imageUrl: string
+  featured: boolean
   createdAt: Date
   updatedAt: Date
 }

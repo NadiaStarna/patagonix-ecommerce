@@ -106,3 +106,15 @@ export const getProducts = async (): Promise<Product[]> => {
   const snapshot = await getDocs(productsRef)
   return snapshot.docs.map(doc => doc.data())
 }
+
+export const getFeaturedProducts = async (): Promise<Product[]> => {
+  const q = query(productsRef, where('featured', '==', true), limit(6))
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => doc.data())
+}
+
+export const getNewestProducts = async (): Promise<Product[]> => {
+  const q = query(productsRef, orderBy('createdAt', 'desc'), limit(6))
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => doc.data())
+}

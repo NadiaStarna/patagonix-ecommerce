@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/auth'
 import { ROUTES } from '../../routes/routes'
 import { Mountain } from 'lucide-react'
-import loginBg from '../../assets/login-bg.jpg'
+import loginBg from '../../assets/hiker-sunset.jpg'
 
 export const RegisterPage = () => {
   const { register, loginWithGoogle, loading } = useAuth()

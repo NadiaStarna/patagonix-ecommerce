@@ -14,6 +14,7 @@ const mockProduct: Product = {
   category: 'accesorios',
   imageUrl: 'https://placehold.co/400',
   createdAt: new Date(),
+  featured: false,
   updatedAt: new Date(),
 }
 

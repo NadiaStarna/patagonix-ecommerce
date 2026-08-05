@@ -1,6 +1,7 @@
 // src/pages/orders/OrdersPage.tsx
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../../contexts/auth'
 import { getOrdersByUser } from '../../services/orders.service'
 import type { Order, OrderStatus } from '../../types'
@@ -30,6 +31,7 @@ const STATUS_OPTIONS: { label: string; value: OrderStatus }[] = [
 export const OrdersPage = () => {
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,8 +70,17 @@ export const OrdersPage = () => {
   return (
     <div className="max-w-2xl mx-auto pt-8 pb-8">
 
-      <div className="flex items-center justify-between mb-6 px-4">
-        <h1 className="text-2xl font-bold text-stone">Mis órdenes</h1>
+      <div className="flex items-center justify-between mb-6 px-4 flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-stone">Mis órdenes</h1>
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1.5 text-sm text-gray-500 border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition-colors"
+          >
+            <ArrowLeft size={15} />
+            Atrás
+          </button>
+        </div>
         {orders.length > 0 && (
           <select
             value={statusFilter}
