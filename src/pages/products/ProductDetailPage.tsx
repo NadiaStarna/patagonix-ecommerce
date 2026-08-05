@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getProductById, getProducts } from '../../services/products.service'
-import { ArrowLeft, Heart, Truck, ShieldCheck, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Heart, Truck, ShieldCheck, RotateCcw, Share2 } from 'lucide-react'
 import type { Product } from '../../types'
 import { ROUTES } from '../../routes/routes'
 import { useCart } from '../../contexts/cart'
@@ -10,6 +10,8 @@ import { useToast } from '../../contexts/toast'
 import { useFavorites } from '../../contexts/favorites'
 import { useSettings } from '../../contexts/settings'
 import { ProductCard } from '../../components/common/ProductCard'
+import { useProducts } from '../../contexts/products'
+import { getSampleColors } from '../../utils/sampleColors'
 
 export const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>()
@@ -19,12 +21,17 @@ export const ProductDetailPage = () => {
   const { showToast } = useToast()
   const { isFavorite, toggleFavorite } = useFavorites()
   const { settings } = useSettings()
+  const { setSelectedCategory } = useProducts()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [related, setRelated] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [quantity, setQuantity] = useState(1)
+  const [zoomed, setZoomed] = useState(false)
+  const [zoomOrigin, setZoomOrigin] = useState('center')
+  const [activeImage, setActiveImage] = useState('')
+  const [selectedColor, setSelectedColor] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -38,6 +45,9 @@ export const ProductDetailPage = () => {
           return
         }
         setProduct(data)
+        setActiveImage(data.imageUrl)
+        setSelectedColor(data.colors?.[0] ?? getSampleColors(data.id)[0])
+        document.title = `${data.name} — Patagonix`
 
         const all = await getProducts()
         const sameCategory = all.filter(p => p.category === data.category && p.id !== data.id)
@@ -51,6 +61,10 @@ export const ProductDetailPage = () => {
 
     fetchProduct()
     window.scrollTo(0, 0)
+
+    return () => {
+      document.title = 'Patagonix'
+    }
   }, [id])
 
   const handleAddToCart = () => {
@@ -72,6 +86,38 @@ export const ProductDetailPage = () => {
   const handleToggleFavorite = () => {
     if (!user || !product) return
     toggleFavorite(product.id)
+  }
+
+  const handleShare = async () => {
+    const url = window.location.href
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: product?.name, url })
+        return
+      }
+    } catch {
+      // Si el usuario cancela el share nativo, no hacemos nada más
+      return
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      showToast({ title: 'Link copiado', description: 'Ya podés compartirlo donde quieras.' })
+    } catch {
+      showToast({ title: 'No se pudo copiar el link', description: 'Copialo manualmente desde la barra de direcciones.' })
+    }
+  }
+
+  const handleCategoryClick = () => {
+    if (!product) return
+    setSelectedCategory(product.category)
+    navigate(ROUTES.PRODUCTS, { state: { scrollToCatalog: true } })
+  }
+
+  const handleImageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    setZoomOrigin(`${x}% ${y}%`)
   }
 
   if (loading) {
@@ -110,6 +156,10 @@ export const ProductDetailPage = () => {
             Productos
           </button>
           <span className="mx-2">/</span>
+          <button onClick={handleCategoryClick} className="hover:text-stone transition capitalize">
+            {product.category}
+          </button>
+          <span className="mx-2">/</span>
           <span className="text-stone font-medium">{product.name}</span>
         </nav>
         <button
@@ -124,21 +174,57 @@ export const ProductDetailPage = () => {
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
 
-          {/* Imagen */}
-          <div className="relative bg-gray-50 flex items-center justify-center p-8 h-80 md:h-auto">
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              className="max-h-64 object-contain"
-            />
-            {user && (
-              <button
-                onClick={handleToggleFavorite}
-                aria-label={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
-                className="absolute top-4 right-4 w-9 h-9 bg-white rounded-full shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
-              >
-                <Heart size={18} className={favorite ? 'text-sunset fill-sunset' : 'text-stone'} />
-              </button>
+          {/* Imagen con zoom al pasar el mouse */}
+          <div className="flex flex-col">
+            <div
+              className="relative bg-gray-50 flex items-center justify-center p-8 h-80 md:h-[26rem] overflow-hidden cursor-zoom-in"
+              onMouseMove={handleImageMouseMove}
+              onMouseEnter={() => setZoomed(true)}
+              onMouseLeave={() => setZoomed(false)}
+            >
+              <img
+                src={activeImage || product.imageUrl}
+                alt={product.name}
+                className="max-h-64 object-contain transition-transform duration-200"
+                style={{
+                  transform: zoomed ? 'scale(1.9)' : 'scale(1)',
+                  transformOrigin: zoomOrigin,
+                }}
+              />
+              <div className="absolute top-4 right-4 flex items-center gap-2">
+                <button
+                  onClick={handleShare}
+                  aria-label="Compartir producto"
+                  className="w-9 h-9 bg-white rounded-full shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
+                >
+                  <Share2 size={16} className="text-stone" />
+                </button>
+                {user && (
+                  <button
+                    onClick={handleToggleFavorite}
+                    aria-label={favorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                    className="w-9 h-9 bg-white rounded-full shadow-sm flex items-center justify-center hover:scale-110 transition-transform"
+                  >
+                    <Heart size={18} className={favorite ? 'text-sunset fill-sunset' : 'text-stone'} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {product.images.length > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-gray-50 overflow-x-auto">
+                {[product.imageUrl, ...product.images].map((url, idx) => (
+                  <button
+                    key={`${url}-${idx}`}
+                    onClick={() => setActiveImage(url)}
+                    className={`w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-colors ${
+                      activeImage === url ? 'border-sunset' : 'border-transparent hover:border-gray-300'
+                    }`}
+                  >
+                    <img src={url} alt={`${product.name} foto ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
@@ -167,6 +253,46 @@ export const ProductDetailPage = () => {
             </p>
 
             <p className="text-gray-500 text-sm leading-relaxed">{product.description}</p>
+
+            {product.colors.length > 0 ? (
+              <div>
+                <span className="text-sm text-gray-600 block mb-1.5">
+                  Color{selectedColor ? `: ${selectedColor}` : ''}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {product.colors.map(color => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
+                        selectedColor === color
+                          ? 'bg-stone text-white border-stone'
+                          : 'bg-white text-stone border-gray-300 hover:border-stone'
+                      }`}
+                    >
+                      {color}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <span className="text-sm text-gray-600 block mb-1.5">Color</span>
+                <div className="flex items-center gap-2">
+                  {getSampleColors(product.id).map(color => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      aria-label={`Elegir color ${color}`}
+                      className={`w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 ${
+                        selectedColor === color ? 'border-stone' : 'border-white shadow-sm'
+                      }`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
             <p className={`text-sm font-medium ${product.stock > 0 ? 'text-moss' : 'text-red-500'}`}>
               {product.stock > 0 ? `✓ ${product.stock} unidades disponibles` : '✗ Sin stock'}

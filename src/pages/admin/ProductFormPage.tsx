@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createProduct, updateProduct, getProductById } from '../../services/products.service'
 import { uploadImageToS3 } from '../../services/upload.service'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, X, Plus } from 'lucide-react'
 import type { ProductCategory } from '../../types'
 import { ROUTES } from '../../routes/routes'
 
@@ -21,6 +21,13 @@ interface FormErrors {
   stock?: string
 }
 
+interface GalleryImage {
+  id: string
+  file: File | null   // null = ya está subida (viene de Firestore), no hay que volver a subirla
+  preview: string
+  uploadedUrl: string | null
+}
+
 export const ProductFormPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -33,6 +40,8 @@ export const ProductFormPage = () => {
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
+  const [gallery, setGallery] = useState<GalleryImage[]>([])
+  const [colorInput, setColorInput] = useState('')
 
   const [form, setForm] = useState({
     name: '',
@@ -42,6 +51,7 @@ export const ProductFormPage = () => {
     category: 'trekking' as ProductCategory,
     imageUrl: '',
     featured: false,
+    colors: [] as string[],
   })
 
   useEffect(() => {
@@ -58,8 +68,17 @@ export const ProductFormPage = () => {
           category: product.category,
           imageUrl: product.imageUrl,
           featured: product.featured,
+          colors: product.colors ?? [],
         })
         setImagePreview(product.imageUrl)
+        setGallery(
+          (product.images ?? []).map(url => ({
+            id: url,
+            file: null,
+            preview: url,
+            uploadedUrl: url,
+          }))
+        )
       } catch (err) {
         setGlobalError('Error al cargar el producto')
       } finally {
@@ -118,6 +137,45 @@ export const ProductFormPage = () => {
     setImagePreview(URL.createObjectURL(file))
   }
 
+  const handleGalleryAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    if (files.length === 0) return
+    const newImages: GalleryImage[] = files.map(file => ({
+      id: `${file.name}-${file.lastModified}-${Math.random()}`,
+      file,
+      preview: URL.createObjectURL(file),
+      uploadedUrl: null,
+    }))
+    setGallery(prev => [...prev, ...newImages])
+    e.target.value = ''
+  }
+
+  const handleGalleryRemove = (imageId: string) => {
+    setGallery(prev => prev.filter(img => img.id !== imageId))
+  }
+
+  const handleAddColor = () => {
+    const color = colorInput.trim()
+    if (!color) return
+    if (form.colors.some(c => c.toLowerCase() === color.toLowerCase())) {
+      setColorInput('')
+      return
+    }
+    setForm(prev => ({ ...prev, colors: [...prev.colors, color] }))
+    setColorInput('')
+  }
+
+  const handleColorKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      handleAddColor()
+    }
+  }
+
+  const handleRemoveColor = (color: string) => {
+    setForm(prev => ({ ...prev, colors: prev.colors.filter(c => c !== color) }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setGlobalError(null)
@@ -134,19 +192,37 @@ export const ProductFormPage = () => {
 
     try {
       let imageUrl = form.imageUrl
-      let imageUploadFailed = false
+      let anyUploadFailed = false
 
       if (imageFile) {
         try {
           imageUrl = await uploadImageToS3(imageFile)
         } catch (err) {
-          imageUploadFailed = true
+          anyUploadFailed = true
           imageUrl = imageUrl || `https://placehold.co/400x300?text=${encodeURIComponent(form.name)}`
         }
       }
 
       if (!imageUrl) {
         imageUrl = `https://placehold.co/400x300?text=${encodeURIComponent(form.name)}`
+      }
+
+      // Subimos las imágenes de galería que todavía no tengan URL (las nuevas);
+      // las que ya venían de Firestore (uploadedUrl seteado) no se vuelven a subir.
+      const galleryUrls: string[] = []
+      for (const img of gallery) {
+        if (img.uploadedUrl) {
+          galleryUrls.push(img.uploadedUrl)
+          continue
+        }
+        if (img.file) {
+          try {
+            const url = await uploadImageToS3(img.file)
+            galleryUrls.push(url)
+          } catch {
+            anyUploadFailed = true
+          }
+        }
       }
 
       const productData = {
@@ -156,6 +232,8 @@ export const ProductFormPage = () => {
         stock: Number(form.stock),
         category: form.category,
         imageUrl,
+        images: galleryUrls,
+        colors: form.colors,
         featured: form.featured,
       }
 
@@ -165,9 +243,9 @@ export const ProductFormPage = () => {
         await createProduct(productData)
       }
 
-      if (imageUploadFailed) {
+      if (anyUploadFailed) {
         alert(
-          'El producto se guardó, pero la foto NO se pudo subir a S3 (la función de subida solo funciona con el sitio deployado en Vercel, no con "npm run dev" local). Se mantuvo la imagen anterior. Probá subir la foto una vez que el sitio esté deployado.'
+          'El producto se guardó, pero alguna foto NO se pudo subir a S3 (la función de subida solo funciona con el sitio deployado en Vercel, no con "npm run dev" local). Probá subir las fotos una vez que el sitio esté deployado.'
         )
       }
 
@@ -303,6 +381,52 @@ export const ProductFormPage = () => {
         </div>
 
         <div>
+          <label className="text-sm text-gray-600 mb-1 block">Colores disponibles</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={colorInput}
+              onChange={e => setColorInput(e.target.value)}
+              onKeyDown={handleColorKeyDown}
+              disabled={isSubmitting}
+              placeholder="Ej: Verde militar — Enter para agregar"
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-glacier disabled:bg-gray-100"
+            />
+            <button
+              type="button"
+              onClick={handleAddColor}
+              disabled={isSubmitting || !colorInput.trim()}
+              className="border border-gray-300 text-stone px-3 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+          {form.colors.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {form.colors.map(color => (
+                <span
+                  key={color}
+                  className="flex items-center gap-1.5 bg-fog text-stone text-xs px-2.5 py-1 rounded-full"
+                >
+                  {color}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveColor(color)}
+                    disabled={isSubmitting}
+                    aria-label={`Quitar ${color}`}
+                  >
+                    <X size={12} className="text-gray-400 hover:text-red-500" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-1">
+            Opcional. Son solo etiquetas de texto — no manejan stock ni precio por separado.
+          </p>
+        </div>
+
+        <div>
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <input
               type="checkbox"
@@ -316,7 +440,7 @@ export const ProductFormPage = () => {
         </div>
 
         <div>
-          <label className="text-sm text-gray-600 mb-1 block">Imagen</label>
+          <label className="text-sm text-gray-600 mb-1 block">Imagen principal</label>
           {imagePreview && (
             <img
               src={imagePreview}
@@ -332,7 +456,44 @@ export const ProductFormPage = () => {
             className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-stone file:text-white file:text-sm hover:file:bg-opacity-90 disabled:opacity-50"
           />
           <p className="text-xs text-gray-400 mt-1">
-            La imagen se sube a AWS S3. Si editás y no elegís una nueva, se mantiene la actual.
+            Es la foto que se ve en el catálogo y las cards. Si editás y no elegís una nueva, se mantiene la actual.
+          </p>
+        </div>
+
+        <div>
+          <label className="text-sm text-gray-600 mb-1 block">Fotos adicionales (galería)</label>
+          {gallery.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {gallery.map(img => (
+                <div key={img.id} className="relative">
+                  <img
+                    src={img.preview}
+                    alt="Foto de galería"
+                    className="w-20 h-20 object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleGalleryRemove(img.id)}
+                    disabled={isSubmitting}
+                    aria-label="Quitar foto"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-stone text-white rounded-full flex items-center justify-center hover:bg-red-500 transition"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleGalleryAdd}
+            disabled={isSubmitting}
+            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-stone file:text-white file:text-sm hover:file:bg-opacity-90 disabled:opacity-50"
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Opcional. Se muestran en la galería de la pantalla de detalle, además de la imagen principal.
           </p>
         </div>
 

@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/auth'
 import { useCart } from '../../contexts/cart'
 import { useToast } from '../../contexts/toast'
 import { useSettings } from '../../contexts/settings'
+import { getSampleColors } from '../../utils/sampleColors'
 
 interface ProductCardProps {
   product: Product
@@ -25,6 +26,7 @@ export const ProductCard = ({ product, featured = false, compact = false }: Prod
   const navigate = useNavigate()
 
   const [quantity, setQuantity] = useState(1)
+  const sampleColors = getSampleColors(product.id)
 
   const favorite = isFavorite(product.id)
 
@@ -115,6 +117,17 @@ export const ProductCard = ({ product, featured = false, compact = false }: Prod
           <span className={`font-bold text-sunset ${compact ? 'text-sm' : 'text-lg'}`}>
             ${product.price.toLocaleString('es-AR')}
           </span>
+
+          <span className="flex items-center gap-1">
+            {sampleColors.map((color, idx) => (
+              <span
+                key={idx}
+                className="w-2.5 h-2.5 rounded-full border border-black/10"
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </span>
+
           {!compact && (
             <span className={`text-xs ${product.stock > 0 ? 'text-moss' : 'text-red-500'}`}>
               {product.stock > 0 ? `${product.stock} disponibles` : 'Sin stock'}

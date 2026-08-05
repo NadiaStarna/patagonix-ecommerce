@@ -22,7 +22,7 @@ import type { Product, ProductCategory, CreateProductDTO, UpdateProductDTO } fro
 
 const productsRef = collection(db, 'products').withConverter(productConverter)
 
-const PAGE_SIZE = 8
+const PAGE_SIZE = 10
 
 export interface GetProductsParams {
   category?: ProductCategory | 'todas'
