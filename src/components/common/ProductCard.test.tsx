@@ -13,6 +13,8 @@ const mockProduct: Product = {
   stock: 10,
   category: 'tecnologia',
   imageUrl: 'https://placehold.co/400',
+  images: [],
+  colors: [],
   createdAt: new Date(),
   featured: false,
   updatedAt: new Date(),
@@ -48,7 +50,7 @@ describe('ProductCard', () => {
 
   it('debe tener un link al detalle del producto', () => {
     render(<ProductCard product={mockProduct} />)
-    const link = screen.getByText('Ver detalle').closest('a')
+    const link = screen.getByText('Laptop Gaming').closest('a')
     expect(link).toHaveAttribute('href', '/products/1')
   })
 

@@ -9,6 +9,8 @@ export const mockProduct: Product = {
   stock: 10,
   category: 'trekking',
   imageUrl: 'https://placehold.co/400x300?text=Mochila',
+  images: [],
+  colors: [],
   featured: false,
   createdAt: new Date('2026-06-01'),
   updatedAt: new Date('2026-06-01'),
@@ -40,6 +42,7 @@ export const mockAdmin: AppUser = {
 
 export const mockOrder: Order = {
   id: 'order-123',
+  orderNumber: 1001,
   userId: 'user-123',
   items: [
     {
