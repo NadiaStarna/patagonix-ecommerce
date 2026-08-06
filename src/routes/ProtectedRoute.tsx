@@ -24,9 +24,15 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to={ROUTES.LOGIN} replace />
   }
 
-  // Si se requiere un rol específico y el usuario no lo tiene
-  // redirigimos a productos
-  if (requiredRole && user.role !== requiredRole) {
+  // Si se requiere un rol específico: "demo" tiene acceso a las mismas
+  // pantallas que "admin" (solo lectura, se restringe en las reglas de
+  // Firestore, no acá), pero no al revés.
+  const hasAccess =
+    !requiredRole ||
+    user.role === requiredRole ||
+    (requiredRole === 'admin' && user.role === 'demo')
+
+  if (!hasAccess) {
     return <Navigate to={ROUTES.PRODUCTS} replace />
   }
 

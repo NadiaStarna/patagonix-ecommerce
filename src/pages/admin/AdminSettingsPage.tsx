@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Save, Store, Mail, Phone, Truck } from 'lucide-react'
 import { getStoreSettings, updateStoreSettings, DEFAULT_SETTINGS, type StoreSettings } from '../../services/settings.service'
+import { useAuth } from '../../contexts/auth'
 
 export const AdminSettingsPage = () => {
+  const { user } = useAuth()
+  const isDemo = user?.role === 'demo'
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -33,6 +36,10 @@ export const AdminSettingsPage = () => {
   }
 
   const handleSave = async () => {
+    if (isDemo) {
+      setError('Estás en modo demo (solo lectura) — no se puede guardar la configuración con esta cuenta.')
+      return
+    }
     setSaving(true)
     setError(null)
     try {
@@ -141,11 +148,11 @@ export const AdminSettingsPage = () => {
         <div className="flex items-center gap-3 pt-2">
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || isDemo}
             className="flex items-center gap-2 bg-stone text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-opacity-90 transition disabled:opacity-50"
           >
             <Save size={15} />
-            {saving ? 'Guardando...' : 'Guardar cambios'}
+            {isDemo ? 'Solo lectura' : saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
           {saved && <span className="text-sm text-moss">✓ Guardado</span>}
         </div>

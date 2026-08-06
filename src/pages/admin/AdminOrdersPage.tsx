@@ -1,6 +1,7 @@
 import { useState, useEffect, Fragment } from 'react'
 import { getAllOrders, updateOrderStatus, deleteOrder } from '../../services/orders.service'
 import { getUsersByIds } from '../../services/users.service'
+import { useAuth } from '../../contexts/auth'
 import { Trash2, Search, ChevronDown, ChevronUp, Package, User } from 'lucide-react'
 import type { Order, OrderStatus, AppUser } from '../../types'
 
@@ -19,6 +20,8 @@ const STATUS_OPTIONS: { label: string; value: OrderStatus }[] = [
 ]
 
 export const AdminOrdersPage = () => {
+  const { user } = useAuth()
+  const isDemo = user?.role === 'demo'
   const [orders, setOrders] = useState<Order[]>([])
   const [customers, setCustomers] = useState<Map<string, AppUser>>(new Map())
   const [loading, setLoading] = useState(true)
@@ -46,6 +49,10 @@ export const AdminOrdersPage = () => {
   }, [])
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
+    if (isDemo) {
+      alert('Estás en modo demo (solo lectura) — no se puede cambiar el estado de los pedidos con esta cuenta.')
+      return
+    }
     try {
       await updateOrderStatus(orderId, newStatus)
       setOrders(prev => prev.map(o =>
@@ -61,6 +68,10 @@ export const AdminOrdersPage = () => {
   }
 
   const handleDelete = async (orderId: string) => {
+    if (isDemo) {
+      alert('Estás en modo demo (solo lectura) — no se pueden eliminar pedidos con esta cuenta.')
+      return
+    }
     if (!confirm('¿Estás segura de eliminar esta orden? Esta acción no se puede deshacer.')) return
     try {
       setDeletingId(orderId)
@@ -227,7 +238,7 @@ export const AdminOrdersPage = () => {
                         <select
                           value={order.status}
                           onChange={e => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                          disabled={isDeleting}
+                          disabled={isDeleting || isDemo}
                           className={`text-xs px-2 py-1 rounded-full font-medium border-0 cursor-pointer ${status.color}`}
                         >
                           {STATUS_OPTIONS.map(opt => (
@@ -240,7 +251,7 @@ export const AdminOrdersPage = () => {
                       <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                         <button
                           onClick={() => handleDelete(order.id)}
-                          disabled={isDeleting}
+                          disabled={isDeleting || isDemo}
                           className="text-gray-300 hover:text-red-400 transition disabled:opacity-50"
                           aria-label="Eliminar orden"
                         >

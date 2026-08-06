@@ -51,6 +51,10 @@ export const AdminDashboardPage = () => {
   }, [])
 
   const handleDeleteProduct = async (id: string, name: string) => {
+    if (user?.role === 'demo') {
+      alert('Estás en modo demo (solo lectura) — no se pueden eliminar productos con esta cuenta.')
+      return
+    }
     if (!confirm(`¿Estás segura de eliminar "${name}"?`)) return
     try {
       setDeletingId(id)

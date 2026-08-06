@@ -218,7 +218,7 @@ export const Navbar = () => {
                       >
                         Mis órdenes
                       </Link>
-                      {user.role === 'admin' && (
+                      {(user.role === 'admin' || user.role === 'demo') && (
                         <Link
                           to={ROUTES.ADMIN}
                           onClick={() => setAccountOpen(false)}
@@ -326,7 +326,7 @@ export const Navbar = () => {
                 >
                   Mis órdenes
                 </Link>
-                {user.role === 'admin' && (
+                {(user.role === 'admin' || user.role === 'demo') && (
                   <Link
                     to={ROUTES.ADMIN}
                     onClick={() => setMenuOpen(false)}

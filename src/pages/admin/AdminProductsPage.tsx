@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getProducts, deleteProduct } from '../../services/products.service'
 import { seedProducts, removeDuplicateProducts } from '../../utils/seedProducts'
+import { useAuth } from '../../contexts/auth'
 import { X, ArrowLeft } from 'lucide-react'
 import type { Product } from '../../types'
 import { ROUTES } from '../../routes/routes'
 
 export const AdminProductsPage = () => {
+  const { user } = useAuth()
+  const isDemo = user?.role === 'demo'
   const [searchParams, setSearchParams] = useSearchParams()
   const query = searchParams.get('q')?.trim().toLowerCase() ?? ''
   const categoryFilter = searchParams.get('category') ?? ''
@@ -40,6 +43,10 @@ export const AdminProductsPage = () => {
   const clearSearch = () => setSearchParams({})
 
   const handleDelete = async (id: string, name: string) => {
+    if (isDemo) {
+      alert('Estás en modo demo (solo lectura) — no se pueden eliminar productos con esta cuenta.')
+      return
+    }
     if (!confirm(`¿Estás segura de eliminar "${name}"?`)) return
     try {
       setDeletingId(id)
@@ -130,28 +137,30 @@ export const AdminProductsPage = () => {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRemoveDuplicates}
-            disabled={cleaning}
-            className="border border-red-300 text-red-500 px-4 py-2 rounded-lg text-sm hover:bg-red-50 transition disabled:opacity-50"
-          >
-            {cleaning ? 'Limpiando...' : 'Borrar duplicados'}
-          </button>
-          <button
-            onClick={handleSeed}
-            disabled={seeding}
-            className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition disabled:opacity-50"
-          >
-            {seeding ? 'Cargando...' : 'Cargar productos de ejemplo'}
-          </button>
-          <Link
-            to={ROUTES.ADMIN_PRODUCT_NEW}
-            className="bg-stone text-white px-4 py-2 rounded-lg text-sm hover:bg-opacity-90 transition"
-          >
-            + Nuevo producto
-          </Link>
-        </div>
+        {!isDemo && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRemoveDuplicates}
+              disabled={cleaning}
+              className="border border-red-300 text-red-500 px-4 py-2 rounded-lg text-sm hover:bg-red-50 transition disabled:opacity-50"
+            >
+              {cleaning ? 'Limpiando...' : 'Borrar duplicados'}
+            </button>
+            <button
+              onClick={handleSeed}
+              disabled={seeding}
+              className="border border-gray-300 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition disabled:opacity-50"
+            >
+              {seeding ? 'Cargando...' : 'Cargar productos de ejemplo'}
+            </button>
+            <Link
+              to={ROUTES.ADMIN_PRODUCT_NEW}
+              className="bg-stone text-white px-4 py-2 rounded-lg text-sm hover:bg-opacity-90 transition"
+            >
+              + Nuevo producto
+            </Link>
+          </div>
+        )}
       </div>
 
       {error && (

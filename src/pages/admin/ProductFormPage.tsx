@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { createProduct, updateProduct, getProductById } from '../../services/products.service'
 import { uploadImageToS3 } from '../../services/upload.service'
 import { searchUnsplashPhotos, triggerUnsplashDownload, type UnsplashPhoto } from '../../services/unsplash.service'
+import { useAuth } from '../../contexts/auth'
 import { ArrowLeft, X, Plus, Search, Check } from 'lucide-react'
 import type { ProductCategory } from '../../types'
 import { ROUTES } from '../../routes/routes'
@@ -32,7 +33,9 @@ interface GalleryImage {
 export const ProductFormPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const isEditing = !!id
+  const isDemo = user?.role === 'demo'
 
   const [status, setStatus] = useState<'editing' | 'submitting' | 'success' | 'error'>('editing')
   const [loadingProduct, setLoadingProduct] = useState(isEditing)
@@ -148,8 +151,7 @@ export const ProductFormPage = () => {
     setForm(prev => ({ ...prev, imageCredit: '', imageCreditUrl: '' }))
   }
 
-  const handleUnsplashSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleUnsplashSearch = async () => {
     if (!unsplashQuery.trim()) return
     setUnsplashLoading(true)
     setUnsplashError(null)
@@ -230,6 +232,11 @@ export const ProductFormPage = () => {
     e.preventDefault()
     setGlobalError(null)
 
+    if (isDemo) {
+      setGlobalError('Estás en modo demo (solo lectura) — no se pueden guardar cambios con esta cuenta.')
+      return
+    }
+
     setTouched({ name: true, description: true, price: true, stock: true })
 
     const errors = validateAll()
@@ -284,8 +291,8 @@ export const ProductFormPage = () => {
         imageUrl,
         images: galleryUrls,
         colors: form.colors,
-        imageCredit: form.imageCredit || undefined,
-        imageCreditUrl: form.imageCreditUrl || undefined,
+        imageCredit: form.imageCredit,
+        imageCreditUrl: form.imageCreditUrl,
         featured: form.featured,
       }
 
@@ -493,24 +500,31 @@ export const ProductFormPage = () => {
 
         <div>
           <label className="text-sm text-gray-600 mb-1 block">Buscar foto en Unsplash</label>
-          <form onSubmit={handleUnsplashSearch} className="flex gap-2">
+          <div className="flex gap-2">
             <input
               type="text"
               value={unsplashQuery}
               onChange={e => setUnsplashQuery(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleUnsplashSearch()
+                }
+              }}
               disabled={isSubmitting}
               placeholder="Ej: mochila trekking montaña"
               className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-glacier disabled:bg-gray-100"
             />
             <button
-              type="submit"
+              type="button"
+              onClick={handleUnsplashSearch}
               disabled={isSubmitting || unsplashLoading || !unsplashQuery.trim()}
               className="flex items-center gap-1.5 bg-stone text-white px-4 rounded-lg text-sm hover:bg-opacity-90 transition disabled:opacity-50"
             >
               <Search size={14} />
               {unsplashLoading ? 'Buscando…' : 'Buscar'}
             </button>
-          </form>
+          </div>
 
           {unsplashError && (
             <p className="text-red-500 text-xs mt-2">{unsplashError}</p>
@@ -626,10 +640,10 @@ export const ProductFormPage = () => {
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isDemo}
             className="bg-stone text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-opacity-90 transition disabled:opacity-50"
           >
-            {isSubmitting ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear producto'}
+            {isDemo ? 'Solo lectura' : isSubmitting ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear producto'}
           </button>
           <button
             type="button"
