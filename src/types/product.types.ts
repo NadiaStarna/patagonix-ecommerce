@@ -16,6 +16,10 @@ export interface Product {
   imageUrl: string
   images: string[]
   colors: string[]
+  // Si la imagen principal viene de Unsplash, guardamos el crédito del
+  // fotógrafo acá — Unsplash exige mostrarlo donde se use la foto.
+  imageCredit?: string
+  imageCreditUrl?: string
   featured: boolean
   createdAt: Date
   updatedAt: Date

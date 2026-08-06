@@ -19,6 +19,8 @@ export const productConverter: FirestoreDataConverter<Product> = {
       imageUrl: product.imageUrl,
       images: product.images ?? [],
       colors: product.colors ?? [],
+      imageCredit: product.imageCredit ?? null,
+      imageCreditUrl: product.imageCreditUrl ?? null,
       featured: product.featured ?? false,
     }
   },
@@ -49,6 +51,8 @@ export const productConverter: FirestoreDataConverter<Product> = {
       imageUrl: data.imageUrl ?? '',
       images: Array.isArray(data.images) ? data.images : [],
       colors: Array.isArray(data.colors) ? data.colors : [],
+      imageCredit: typeof data.imageCredit === 'string' ? data.imageCredit : undefined,
+      imageCreditUrl: typeof data.imageCreditUrl === 'string' ? data.imageCreditUrl : undefined,
       featured: data.featured === true,
       createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : new Date(),
       updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : new Date(),

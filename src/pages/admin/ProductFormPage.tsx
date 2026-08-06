@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { createProduct, updateProduct, getProductById } from '../../services/products.service'
 import { uploadImageToS3 } from '../../services/upload.service'
-import { ArrowLeft, X, Plus } from 'lucide-react'
+import { searchUnsplashPhotos, triggerUnsplashDownload, type UnsplashPhoto } from '../../services/unsplash.service'
+import { ArrowLeft, X, Plus, Search, Check } from 'lucide-react'
 import type { ProductCategory } from '../../types'
 import { ROUTES } from '../../routes/routes'
 
@@ -42,6 +43,10 @@ export const ProductFormPage = () => {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [gallery, setGallery] = useState<GalleryImage[]>([])
   const [colorInput, setColorInput] = useState('')
+  const [unsplashQuery, setUnsplashQuery] = useState('')
+  const [unsplashResults, setUnsplashResults] = useState<UnsplashPhoto[]>([])
+  const [unsplashLoading, setUnsplashLoading] = useState(false)
+  const [unsplashError, setUnsplashError] = useState<string | null>(null)
 
   const [form, setForm] = useState({
     name: '',
@@ -52,6 +57,8 @@ export const ProductFormPage = () => {
     imageUrl: '',
     featured: false,
     colors: [] as string[],
+    imageCredit: '',
+    imageCreditUrl: '',
   })
 
   useEffect(() => {
@@ -69,6 +76,8 @@ export const ProductFormPage = () => {
           imageUrl: product.imageUrl,
           featured: product.featured,
           colors: product.colors ?? [],
+          imageCredit: product.imageCredit ?? '',
+          imageCreditUrl: product.imageCreditUrl ?? '',
         })
         setImagePreview(product.imageUrl)
         setGallery(
@@ -135,6 +144,47 @@ export const ProductFormPage = () => {
     if (!file) return
     setImageFile(file)
     setImagePreview(URL.createObjectURL(file))
+    // Si subís una foto propia, dejamos de usar el crédito de Unsplash (ya no aplica)
+    setForm(prev => ({ ...prev, imageCredit: '', imageCreditUrl: '' }))
+  }
+
+  const handleUnsplashSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!unsplashQuery.trim()) return
+    setUnsplashLoading(true)
+    setUnsplashError(null)
+    try {
+      const results = await searchUnsplashPhotos(unsplashQuery)
+      setUnsplashResults(results)
+      if (results.length === 0) {
+        setUnsplashError('No se encontraron fotos para esa búsqueda.')
+      }
+    } catch (err: any) {
+      setUnsplashError(err?.message ?? 'Error al buscar en Unsplash')
+    } finally {
+      setUnsplashLoading(false)
+    }
+  }
+
+  const handleSelectUnsplashPhoto = async (photo: UnsplashPhoto) => {
+    setImageFile(null)
+    setImagePreview(photo.url)
+    setForm(prev => ({
+      ...prev,
+      imageUrl: photo.url,
+      imageCredit: photo.photographerName,
+      imageCreditUrl: photo.photographerProfileUrl,
+    }))
+    // Requisito de Unsplash: avisarles cuando una foto de búsqueda se usa de verdad
+    triggerUnsplashDownload(photo.downloadLocation)
+  }
+
+  const handleAddUnsplashToGallery = (photo: UnsplashPhoto) => {
+    setGallery(prev => [
+      ...prev,
+      { id: photo.id, file: null, preview: photo.url, uploadedUrl: photo.url },
+    ])
+    triggerUnsplashDownload(photo.downloadLocation)
   }
 
   const handleGalleryAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,6 +284,8 @@ export const ProductFormPage = () => {
         imageUrl,
         images: galleryUrls,
         colors: form.colors,
+        imageCredit: form.imageCredit || undefined,
+        imageCreditUrl: form.imageCreditUrl || undefined,
         featured: form.featured,
       }
 
@@ -440,6 +492,75 @@ export const ProductFormPage = () => {
         </div>
 
         <div>
+          <label className="text-sm text-gray-600 mb-1 block">Buscar foto en Unsplash</label>
+          <form onSubmit={handleUnsplashSearch} className="flex gap-2">
+            <input
+              type="text"
+              value={unsplashQuery}
+              onChange={e => setUnsplashQuery(e.target.value)}
+              disabled={isSubmitting}
+              placeholder="Ej: mochila trekking montaña"
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-glacier disabled:bg-gray-100"
+            />
+            <button
+              type="submit"
+              disabled={isSubmitting || unsplashLoading || !unsplashQuery.trim()}
+              className="flex items-center gap-1.5 bg-stone text-white px-4 rounded-lg text-sm hover:bg-opacity-90 transition disabled:opacity-50"
+            >
+              <Search size={14} />
+              {unsplashLoading ? 'Buscando…' : 'Buscar'}
+            </button>
+          </form>
+
+          {unsplashError && (
+            <p className="text-red-500 text-xs mt-2">{unsplashError}</p>
+          )}
+
+          {unsplashResults.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mt-3">
+              {unsplashResults.map(photo => {
+                const isSelected = form.imageUrl === photo.url
+                return (
+                  <div key={photo.id} className="relative group">
+                    <img
+                      src={photo.thumbUrl}
+                      alt={`Foto de ${photo.photographerName} en Unsplash`}
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 rounded-lg transition-colors flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectUnsplashPhoto(photo)}
+                        title="Usar como imagen principal"
+                        className="bg-white text-stone text-xs px-2 py-1 rounded-md font-medium hover:bg-fog transition"
+                      >
+                        Principal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddUnsplashToGallery(photo)}
+                        title="Agregar a la galería"
+                        className="bg-white text-stone text-xs px-2 py-1 rounded-md font-medium hover:bg-fog transition"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                    {isSelected && (
+                      <span className="absolute top-1 right-1 bg-sunset text-white rounded-full w-5 h-5 flex items-center justify-center">
+                        <Check size={12} />
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+          <p className="text-xs text-gray-400 mt-2">
+            Fotos reales de Unsplash (no generadas por IA) — al elegir una queda guardado el crédito del fotógrafo, que se muestra en la pantalla de detalle del producto.
+          </p>
+        </div>
+
+        <div>
           <label className="text-sm text-gray-600 mb-1 block">Imagen principal</label>
           {imagePreview && (
             <img
@@ -447,6 +568,11 @@ export const ProductFormPage = () => {
               alt="Preview"
               className="w-32 h-32 object-cover rounded-lg mb-2"
             />
+          )}
+          {form.imageCredit && (
+            <p className="text-xs text-gray-400 mb-2">
+              Crédito actual: foto de {form.imageCredit} en Unsplash
+            </p>
           )}
           <input
             type="file"
