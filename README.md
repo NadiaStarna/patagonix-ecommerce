@@ -4,11 +4,28 @@ Plataforma de e-commerce desarrollada como Proyecto Integrador del Módulo 5 - E
 
 ## Contexto del proyecto
 
-Patagonix Tech es una software factory especializada en aplicaciones web para retail. Este proyecto implementa una plataforma de e-commerce que permite a usuarios finales comprar productos online, con un panel de administración robusto para gestionar catálogo y órdenes.
+Patagonix Tech es una software factory especializada en aplicaciones web para retail. Este proyecto implementa una plataforma de e-commerce completa que permite a usuarios finales comprar productos online, con un panel de administración robusto para gestionar toda la operación de la tienda.
 
-La aplicación soporta dos tipos de usuarios:
+La aplicación soporta tres tipos de usuarios:
 - **Clientes**: navegan el catálogo, agregan productos al carrito, marcan favoritos y realizan compras
-- **Administradores**: gestionan productos y órdenes desde un panel protegido
+- **Administradores**: gestionan productos, pedidos, categorías, usuarios, inventario y configuración de la tienda desde un panel protegido
+- **Cuenta demo**: acceso de solo lectura al panel de administración, pensado para que reclutadores o visitantes puedan navegar el admin sin poder modificar datos reales
+
+### Funcionalidades principales
+
+**Tienda pública**
+- Landing page con hero, colecciones por categoría, productos destacados y beneficios
+- Catálogo con búsqueda, filtro por categoría (píldoras horizontales) y paginación de a 10 productos
+- Detalle de producto con galería de fotos, zoom, selector de color, compartir y productos relacionados
+- Carrito con resumen de envío gratis, favoritos, y checkout con validaciones
+
+**Panel de administración**
+- Dashboard con métricas reales (ventas, pedidos, productos), últimos pedidos y stock bajo
+- Gestión de pedidos: cambio de estado, números de pedido secuenciales y persistentes
+- Gestión de productos: colores (tags), galería de imágenes adicionales, búsqueda de fotos por la API de Unsplash con crédito automático al fotógrafo
+- Categorías, usuarios e inventario con datos reales de Firestore
+- Configuración de tienda (nombre, contacto, envío) editable y reflejada en todo el sitio en tiempo real
+- Descuento de stock automático y atómico en cada compra (transacción de Firestore, evita sobreventa)
 
 ## 🚀 Demo en producción
 
@@ -16,10 +33,10 @@ La aplicación soporta dos tipos de usuarios:
 
 ## 🔑 Credenciales de prueba
 
-| Rol | Email | Contraseña |
-|-----|-------|------------|
-| Admin | test@test.com | 123456 |
-| Cliente | Registrarse normalmente desde la app | |
+| Rol | Email | Contraseña | Notas |
+|-----|-------|------------|-------|
+| Demo (solo lectura) | demo@patagonix.com | Patagonix2026! | Ve todo el panel de admin, no puede guardar ni borrar nada |
+| Cliente | Registrarse normalmente desde la app | | |
 
 ## 🛠️ Stack tecnológico
 
@@ -31,9 +48,10 @@ La aplicación soporta dos tipos de usuarios:
 - lucide-react (iconografía)
 
 ### Backend / Servicios
-- Firebase Authentication (registro, login, roles)
+- Firebase Authentication (registro, login, roles: admin / demo / customer)
 - Firebase Firestore (base de datos NoSQL, con `FirestoreDataConverter` para tipado de lectura/escritura)
 - AWS S3 (almacenamiento de imágenes)
+- API de Unsplash (búsqueda de fotos de stock reales para productos, con crédito automático al fotógrafo)
 - Vercel Serverless Functions (generación de presigned URLs)
 
 ### Testing
@@ -91,7 +109,7 @@ Las órdenes guardan un snapshot completo de cada item (nombre, precio, imagen) 
 
 La paleta de la app se construye sobre un degradé de marca (violeta atardecer → naranja arcilla → grafito), inspirado en la luz del amanecer sobre la cordillera patagónica. Este degradé se repite de forma consistente en:
 
-- El fondo del **Hero** de la home, superpuesto sobre una fotografía real de montaña (banco de imágenes libre, Unsplash) con animación de estrellas titilando.
+- El fondo del **Hero** de la landing y del catálogo, superpuesto sobre fotografías reales de montaña (Unsplash, con crédito al fotógrafo) con un degradé oscuro para legibilidad del texto.
 - Las pantallas de **Login y Register**, con un tratamiento *glassmorphism* (tarjeta semi-transparente con `backdrop-blur`) sobre la misma fotografía.
 - Acentos puntuales, como el botón "Agregar al carrito" en las tarjetas de producto, que usa un degradé con los mismos dos colores extremos del Hero para mantener coherencia visual en toda la app.
 
@@ -103,7 +121,7 @@ Esta decisión busca que la identidad de marca no viva solo en el logo, sino que
 2. `AuthProvider` crea un documento en Firestore `users/{uid}` con `role: 'customer'`
 3. Al iniciar sesión, `onAuthStateChanged` lee ese documento para obtener el rol
 4. `ProtectedRoute` verifica autenticación y rol antes de mostrar cada página
-5. Para hacer a alguien admin: cambiar `role` a `'admin'` directamente en Firestore
+5. Para hacer a alguien admin: cambiar `role` a `'admin'` directamente en Firestore. Para darle acceso de solo lectura al panel (por ejemplo, para mostrarlo públicamente sin riesgo): `role: 'demo'`
 
 ## 📦 Flujo de upload de imágenes a S3
 
@@ -150,6 +168,8 @@ AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_REGION=
 AWS_BUCKET_NAME=
+
+VITE_UNSPLASH_ACCESS_KEY=
 ```
 
 Las variables con prefijo `VITE_` son accesibles desde el frontend. Las variables de AWS **no llevan prefijo** porque solo se usan en las Vercel Serverless Functions — nunca llegan al navegador.
@@ -179,16 +199,20 @@ npm install
 3. Crear usuario IAM con permisos de S3
 4. Copiar credenciales a `.env`
 
-### 5. Configurar variables de entorno en Vercel
+### 5. Configurar Unsplash (opcional, para búsqueda de fotos de producto)
+1. Crear una app en [unsplash.com/developers](https://unsplash.com/developers)
+2. Copiar la "Access Key" a `VITE_UNSPLASH_ACCESS_KEY` en `.env`
+
+### 6. Configurar variables de entorno en Vercel
 - Las variables `VITE_*` van en el entorno de producción
 - Las variables de AWS van como variables de entorno de las Serverless Functions
 
-### 6. Correr en desarrollo
+### 7. Correr en desarrollo
 ```bash
 npm run dev
 ```
 
-### 7. Correr tests
+### 8. Correr tests
 ```bash
 npm run test
 ```
@@ -199,10 +223,14 @@ npm run test
 - Las credenciales de AWS solo existen en las Vercel Serverless Functions
 - Las reglas de Firestore validan roles del lado del servidor
 - Las rutas protegidas validan rol tanto en el frontend (`ProtectedRoute`) como en Firestore
+- La cuenta demo (`role: demo`) puede leer todos los datos igual que un admin, pero las reglas de Firestore bloquean cualquier escritura (crear, editar, borrar) sin depender de la UI — aunque alguien intentara saltearse los botones, la escritura se rechaza en el servidor
 
-## 📊 Extra Credit
+## 📊 Funcionalidades destacadas
 
-✅ **Paginación de productos** — implementada con cursor de Firestore (`limit()` + `startAfter()`), cargando 8 productos por página.
+✅ **Paginación de productos** — implementada con cursor de Firestore (`limit()` + `startAfter()`), cargando 10 productos por página.
+✅ **Transacciones atómicas de stock** — al comprar, el número de pedido y el descuento de stock de cada producto se resuelven en una única transacción de Firestore, evitando condiciones de carrera y sobreventa.
+✅ **Rol "demo" de solo lectura** — separado del rol admin real, protegido tanto en las reglas de Firestore como en la UI, para poder compartir acceso público al panel sin arriesgar los datos reales.
+✅ **Integración con Unsplash API** — búsqueda de fotos de stock reales para productos, con crédito automático al fotógrafo (requisito de la API) visible en la pantalla de detalle.
 
 ## 🤖 Bitácora de uso de IA
 
@@ -210,4 +238,4 @@ Ver [docs/uso-de-ia/README.md](./docs/uso-de-ia/README.md)
 
 ## 👤 Autora
 
-Nadia Starna - 
+Nadia Starna - [GitHub](https://github.com/NadiaStarna)
